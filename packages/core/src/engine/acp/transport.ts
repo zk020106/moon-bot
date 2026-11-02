@@ -33,11 +33,17 @@ export class StdioTransport implements AcpTransport {
   private readonly command: string
   private readonly args: readonly string[]
   private readonly cwd: string | undefined
+  private readonly env: Readonly<Record<string, string>> | undefined
 
-  constructor(command: string, args: readonly string[] = [], options?: { readonly cwd?: string }) {
+  constructor(
+    command: string,
+    args: readonly string[] = [],
+    options?: { readonly cwd?: string; readonly env?: Readonly<Record<string, string>> },
+  ) {
     this.command = command
     this.args = args
     this.cwd = options?.cwd
+    this.env = options?.env
   }
 
   async open(): Promise<void> {
@@ -45,6 +51,7 @@ export class StdioTransport implements AcpTransport {
     const child = spawn(this.command, this.args, {
       stdio: ['pipe', 'pipe', 'pipe'],
       ...(this.cwd === undefined ? {} : { cwd: this.cwd }),
+      ...(this.env === undefined ? {} : { env: { ...process.env, ...this.env } }),
       ...(process.platform === 'win32' ? { shell: true } : {}),
     })
     this.child = child

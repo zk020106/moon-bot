@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import type { EngineContentBlock, EngineEvent } from '../events.ts'
 import type { StoredMessage, TranscriptStore } from '../builtin/services.ts'
 import type { PermissionRequestParams } from './permission.ts'
+import type { ConfigOption, CustomEndpoint } from './session-config.ts'
 import type { AcpTransport } from './transport.ts'
 
 /** ACP uses the same durable transcript row shape as the built-in engine. */
@@ -83,6 +84,10 @@ export interface AcpAgentOptions {
   readonly requestPermission?: ((sessionId: string, params: PermissionRequestParams) => Promise<string>) | undefined
   /** Moon Bot's durable transcript; ACP events are appended here in turn order. */
   readonly transcript?: AcpTranscriptStore | undefined
+  /** Endpoints overlaid on the spawned agent; the user's own config is not written. */
+  readonly endpoints?: readonly CustomEndpoint[] | undefined
+  /** Called with the settings a new session published, including its model list. */
+  readonly onConfig?: ((sessionId: string, options: readonly ConfigOption[]) => void) | undefined
 }
 export interface Waiter {
   readonly resolve: (value: unknown) => void
@@ -91,6 +96,7 @@ export interface Waiter {
 export interface AgentSession {
   readonly acpId: string
   turns: number
+  config: readonly ConfigOption[] | ConfigOption[]
   updates: ((event: EngineEvent) => void) | undefined
   stop: (() => void) | undefined
   transcriptTail?: Promise<void> | undefined

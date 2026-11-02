@@ -5,6 +5,9 @@ import type { AgentRuntime, CancelReason, TurnInput, TurnMessage } from '../runt
 import { callFailureOf } from '../failure.ts'
 import { matchPermissionOutcome, type PermissionRequestParams } from './permission.ts'
 import { LineProtocol, UPDATE_OF, type Inbound, type JsonRpcNotification, type JsonRpcRequest } from './protocol.ts'
+import { configOptionsOf } from './session-config.ts'
+import { configOf, refusedTurn, setConfig, type SettingsHost } from './session-settings.ts'
+import type { ConfigSetResult } from './session-config.ts'
 import {
   eventsOfUpdate,
   type AcpAgentOptions,
@@ -105,39 +108,18 @@ export class AcpRuntime implements AgentRuntime {
   async *runTurn(input: TurnInput): AsyncIterable<EngineEvent> {
     const history = (await this.options.transcript?.history(input.sessionId)) ?? []
     const nextTurn = Math.max(0, ...history.map(message => message.turn ?? 0)) + 1
-    const refused = async (message: string): Promise<readonly EngineEvent[]> => {
-      const events: readonly EngineEvent[] = [
-        { type: 'turn/start', turn: nextTurn },
-        { type: 'turn/end', turn: nextTurn, reason: { kind: 'error', error: callFailureOf(message) } },
-      ]
-      await this.appendTranscript(input.sessionId, {
-        role: 'user',
-        content: input.message.content,
-        turn: nextTurn,
-        ...(input.message.source !== undefined ? { source: input.message.source } : {}),
-        at: Date.now(),
-      })
-      await this.appendTranscript(input.sessionId, {
-        role: 'system',
-        content: message === '' ? [] : [{ type: 'text', text: message }],
-        turn: nextTurn,
-        source: { kind: 'turn-error' },
-        at: Date.now(),
-      })
-      for (const event of events) this.options.emit(input.sessionId, event)
-      return events
-    }
+    const refused = (message: string) => refusedTurn(this.settingsHost(), input, nextTurn, message)
     let acpId: string
     try {
       await this.start()
       acpId = await this.openSession(input)
     } catch (error) {
-      yield* await refused(error instanceof Error ? error.message : String(error))
+      for (const event of await refused(error instanceof Error ? error.message : String(error))) yield event
       return
     }
     const session = this.sessions.get(input.sessionId)
     if (session === undefined) {
-      yield* await refused('the ACP session is gone')
+      for (const event of await refused('the ACP session is gone')) yield event
       return
     }
     session.turns = Math.max(session.turns, nextTurn - 1)
@@ -184,18 +166,16 @@ export class AcpRuntime implements AgentRuntime {
       settled = true
     })
     let failure: Error | undefined
-    while (!settled || queue.length > 0) {
-      if (queue.length === 0) {
-        if (!settled) await new Promise(resolve => setImmediate(resolve))
-        continue
-      }
-      yield queue.shift() as EngineEvent
+    while (!settled) {
+      while (queue.length > 0) yield queue.shift() as EngineEvent
+      if (!settled) await new Promise(resolve => setImmediate(resolve))
     }
     try {
       await done
     } catch (error) {
       failure = error instanceof Error ? error : new Error(String(error))
     }
+    while (queue.length > 0) yield queue.shift() as EngineEvent
     session.updates = undefined
     if (!queue.some(event => event.type === 'turn/end')) {
       const end: EngineEvent =
@@ -258,6 +238,24 @@ export class AcpRuntime implements AgentRuntime {
     session.stop?.()
   }
 
+  private settingsHost(): SettingsHost {
+    return {
+      sessions: this.sessions,
+      request: (method, params) => this.request(method, params),
+      appendTranscript: (sessionId, message) => this.appendTranscript(sessionId, message),
+      emit: (sessionId, event) => this.options.emit(sessionId, event),
+      ...(this.options.onConfig !== undefined ? { onConfig: this.options.onConfig } : {}),
+    }
+  }
+
+  configOf(sessionId: string): readonly import('./session-config.ts').ConfigOption[] {
+    return configOf(this.settingsHost(), sessionId)
+  }
+
+  async setConfig(sessionId: string, configId: string, value: string): Promise<ConfigSetResult> {
+    return setConfig(this.settingsHost(), sessionId, configId, value)
+  }
+
   private async openSession(input: TurnInput): Promise<string> {
     const existing = this.sessions.get(input.sessionId)
     if (existing !== undefined) return existing.acpId
@@ -265,10 +263,11 @@ export class AcpRuntime implements AgentRuntime {
     const result = (await this.request('session/new', {
       ...(cwd !== undefined && cwd !== '' ? { cwd } : {}),
       ...(input.config?.model !== undefined ? { model: { id: input.config.model } } : {}),
-      ...(input.config?.systemPrompt !== undefined ? { mcpServers: [] } : {}),
     })) as { sessionId?: unknown } | null
     const acpId = typeof result?.sessionId === 'string' ? result.sessionId : randomUUID()
-    this.sessions.set(input.sessionId, { acpId, turns: 0, updates: undefined, stop: undefined })
+    const config = configOptionsOf(result)
+    this.sessions.set(input.sessionId, { acpId, turns: 0, config, updates: undefined, stop: undefined })
+    this.options.onConfig?.(input.sessionId, config)
     return acpId
   }
 
