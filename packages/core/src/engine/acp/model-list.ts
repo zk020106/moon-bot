@@ -56,6 +56,12 @@ export async function listModels(spec: ModelListCommand, timeoutMs = 5_000): Pro
     ...(spec.env !== undefined ? { env: { ...process.env, ...spec.env } } : {}),
   })
   child.stderr?.on('data', () => {})
+  // A missing CLI raises ENOENT as an event, not at the spawn call: without this the
+  // whole process dies when the catalog refreshes on a machine that has no such command.
+  const spawnFailed = new Promise<never>((_resolve, reject) => {
+    child.on('error', error => reject(error))
+  })
+  spawnFailed.catch(() => undefined)
   let buffer = ''
   const waiters = new Map<number, (value: unknown) => void>()
   let nextId = 1
@@ -79,19 +85,22 @@ export async function listModels(spec: ModelListCommand, timeoutMs = 5_000): Pro
     }
   })
   const call = (method: string, params: Readonly<Record<string, unknown>>): Promise<unknown> =>
-    new Promise((resolve, reject) => {
-      const id = nextId++
-      const timer = setTimeout(() => {
-        waiters.delete(id)
-        reject(new Error(`${method} timed out`))
-      }, timeoutMs)
-      waiters.set(id, value => {
-        clearTimeout(timer)
-        if (value instanceof Error) reject(value)
-        else resolve(value)
-      })
-      child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`)
-    })
+    Promise.race([
+      spawnFailed,
+      new Promise<unknown>((resolve, reject) => {
+        const id = nextId++
+        const timer = setTimeout(() => {
+          waiters.delete(id)
+          reject(new Error(`${method} timed out`))
+        }, timeoutMs)
+        waiters.set(id, value => {
+          clearTimeout(timer)
+          if (value instanceof Error) reject(value)
+          else resolve(value)
+        })
+        child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`)
+      }),
+    ])
   const request = (cursor?: string): Promise<unknown> =>
     call('model/list', { limit: 100, includeHidden: true, ...(cursor !== undefined ? { cursor } : {}) })
   const seen = new Set<string>()

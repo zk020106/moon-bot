@@ -60,3 +60,7 @@ process.stdin.on('data', chunk => {
     ['first', 'second'],
   )
 })
+
+test('a CLI that is not installed rejects instead of killing the process', async () => {
+  await assert.rejects(listModels({ command: 'moon-bot-no-such-cli-xyz', args: [] }), /ENOENT/)
+})
