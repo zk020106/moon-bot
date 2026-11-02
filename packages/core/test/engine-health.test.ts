@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { discoverLocalAgents } from '../src/engine/acp/discovery.ts'
 import { canLaunch, healthOf } from '../src/engine/health.ts'
 import { failureSay } from '../src/host/turns/failure.ts'
 
@@ -14,6 +15,14 @@ test('health is only what discovery already knows', () => {
   assert.equal(canLaunch({ kind: 'acp', onDemand: true }), true)
   assert.equal(canLaunch({ kind: 'acp' }), false)
   assert.equal(canLaunch({ kind: 'unsupported', path: '/usr/bin/codex' }), false)
+})
+
+test('codex can list models without being selectable as an engine', () => {
+  const codex = discoverLocalAgents().find(agent => agent.id === 'codex')
+  assert.ok(codex !== undefined)
+  assert.equal(codex.catalog, 'app-server')
+  assert.equal(canLaunch(codex), false)
+  assert.equal(discoverLocalAgents().find(agent => agent.id === 'opencode')?.catalog, 'acp-config')
 })
 
 test('quota and overload are said apart from a plain server failure', () => {

@@ -2,11 +2,13 @@
 // LocalRunner is the in-process implementation used today; its small interface is the
 // seam a headless daemon/remote runner can implement without changing Bot delivery.
 import type { AgentRuntime } from './runtime.ts'
+import { AppServerRuntime } from './acp/app-server-runtime.ts'
 import { AcpRuntime } from './acp/runtime.ts'
 import type { PermissionRequestParams } from './acp/permission.ts'
 import type { AcpTranscriptStore } from './acp/runtime-types.ts'
 import { canLaunch } from './health.ts'
 import { localEngineCatalog, type EngineCatalog, type LocalAgent } from './acp/discovery.ts'
+import { endpointEnv } from './acp/session-config.ts'
 import { StdioTransport, RelayTransport, type RelayPort } from './acp/transport.ts'
 
 export interface RunnerBotSpec {
@@ -20,6 +22,10 @@ export interface RunnerOptions {
   readonly catalog?: EngineCatalog
   /** The relay's live connections; an `acp-remote` Bot turns to one of these. */
   readonly relay?: RelayPort | undefined
+  /** Moon Bot's own data directory; spawned agents get a config home under it. */
+  readonly home?: string | undefined
+  /** Custom endpoints read at spawn, so a saved one reaches the next process. */
+  readonly endpoints?: (() => readonly import('./acp/session-config.ts').CustomEndpoint[]) | undefined
   readonly requestPermission?: ((sessionId: string, params: PermissionRequestParams) => Promise<string>) | undefined
   readonly transcript?: AcpTranscriptStore | undefined
 }
@@ -30,7 +36,7 @@ export interface ExecutionRunner {
 }
 
 export class LocalRunner implements ExecutionRunner {
-  private readonly acp = new Map<string, AcpRuntime>()
+  private readonly acp = new Map<string, AgentRuntime>()
   private readonly catalog: EngineCatalog
   private readonly options: RunnerOptions
   private discovered: readonly LocalAgent[] | undefined
@@ -68,6 +74,25 @@ export class LocalRunner implements ExecutionRunner {
         return remote
       }
     }
+    if (
+      configured !== null &&
+      typeof configured === 'object' &&
+      (configured as { kind?: unknown }).kind === 'app-server'
+    ) {
+      const key = 'app-server:codex'
+      let runtime = this.acp.get(key)
+      if (runtime === undefined) {
+        const home = this.options.home
+        runtime = new AppServerRuntime({
+          command: 'codex',
+          args: ['app-server'],
+          emit: this.options.emit,
+          ...(home !== undefined ? { env: { CODEX_HOME: `${home}/agents/codex` } } : {}),
+        })
+        this.acp.set(key, runtime)
+      }
+      return runtime
+    }
     const localAgents = this.discovered ?? (this.discovered = this.catalog.list())
     const discovered =
       typeof bot?.runtimeId === 'string'
@@ -83,9 +108,16 @@ export class LocalRunner implements ExecutionRunner {
     const key = typeof spec?.key === 'string' && spec.key !== '' ? spec.key : command
     let runtime = this.acp.get(key)
     if (runtime === undefined) {
+      const home = this.options.home
+      const endpoints = this.options.endpoints?.() ?? []
       runtime = new AcpRuntime({
-        transport: new StdioTransport(command, Array.isArray(spec?.args) ? spec.args : []),
+        transport: new StdioTransport(
+          command,
+          Array.isArray(spec?.args) ? spec.args : [],
+          home !== undefined && endpoints.length > 0 ? { env: endpointEnv(home, endpoints) } : {},
+        ),
         emit: this.options.emit,
+        ...(endpoints.length > 0 ? { endpoints } : {}),
         ...(this.options.transcript !== undefined ? { transcript: this.options.transcript } : {}),
         ...(this.options.requestPermission !== undefined ? { requestPermission: this.options.requestPermission } : {}),
       })

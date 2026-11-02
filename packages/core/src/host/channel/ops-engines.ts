@@ -2,6 +2,7 @@
 // built-in one, a local ACP agent, or a remote agent that dialed into the relay (2026-10-27
 // remote-agents). The list reads; `engine-set` moves one Bot.
 import { capabilitiesFor } from '../../engine/capabilities.ts'
+import { capabilityOf } from '../../engine/acp/provider-capability.ts'
 import { canLaunch, healthOf } from '../../engine/health.ts'
 import type { ChannelHandler, ChannelHandlers } from './envelope.ts'
 import { fail, ok } from './envelope.ts'
@@ -56,6 +57,7 @@ export function engineHandlers(rt: ChannelRuntime): ChannelHandlers {
           version?: string
           reason?: string
           onDemand?: boolean
+          catalog?: string
         }[]
       }>('engineCatalog')
       const entries = new Map<string, Record<string, unknown>>([
@@ -68,6 +70,7 @@ export function engineHandlers(rt: ChannelRuntime): ChannelHandlers {
             selectable: true,
             health: 'ready',
             capabilities: capabilitiesFor('builtin'),
+            provider: capabilityOf('builtin'),
           },
         ],
       ])
@@ -82,10 +85,12 @@ export function engineHandlers(rt: ChannelRuntime): ChannelHandlers {
           selectable: canLaunch(agent),
           health: healthOf(agent),
           capabilities: capabilitiesFor(agent.kind),
+          provider: capabilityOf(agent.id),
           ...(agent.path === undefined ? {} : { path: agent.path }),
           ...(agent.version === undefined ? {} : { version: agent.version }),
           ...(agent.reason === undefined ? {} : { reason: agent.reason }),
           ...(agent.onDemand ? { onDemand: true } : {}),
+          ...(agent.catalog === undefined ? {} : { catalog: agent.catalog }),
         })
       }
       const registry = rt.ctx.get<RelayAdmin>('relayRegistry')

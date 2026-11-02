@@ -32,9 +32,16 @@ interface ModelRt {
     sessionId: string,
     selection: { provider: string; model: string; reasoningEffort?: string },
   ): Promise<unknown>
-  catalog(options?: {
-    fresh?: boolean
-  }): Promise<{ ref: string; provider: string; providerName: string; id: string; [key: string]: unknown }[]>
+  catalog(options?: { fresh?: boolean }): Promise<
+    {
+      ref: string
+      provider: string
+      providerName: string
+      id: string
+      reasoning?: { efforts: { id: string }[] }
+      [key: string]: unknown
+    }[]
+  >
   cachedDefault(): string | undefined
   applyModel(bot: Record<string, unknown>): Promise<string | undefined>
   resolveEffort(ref: string, effort: string): Promise<string>
@@ -45,6 +52,35 @@ test('the default model is the DSH default when served, else the first served mo
   assert.equal(await runtime({ provider: 'ollama', model: 'kimi-k3' }).defaultModel(), 'ollama/kimi-k3')
   assert.equal(await runtime({ provider: 'gone', model: 'x' }).defaultModel(), 'deepseek/deepseek-v4.1-flash')
   assert.equal(await runtime(undefined).defaultModel(), 'deepseek/deepseek-v4.1-flash')
+})
+
+test('a CLI catalog entry is shown but cannot be chosen or become the default', async () => {
+  const ctx = {
+    llm: {
+      listProviders: () => [{ id: 'deepseek' }],
+      listModels: async () => [{ id: 'deepseek-v4.1-flash', name: 'DeepSeek V4.1 Flash' }],
+    },
+    get: (name: string) =>
+      name === 'cliModels'
+        ? async () => [
+            { id: 'gpt-6-sol', name: 'GPT-6-Sol', hidden: false, efforts: ['low', 'high'] },
+            { id: 'secret', name: 'Secret', hidden: true },
+          ]
+        : undefined,
+  }
+  const rt = { ctx, state: { bots: {} } } as unknown as ModelRt
+  install(rt as unknown as Parameters<typeof install>[0])
+  const entries = await rt.catalog()
+  assert.deepEqual(
+    entries.map(entry => entry.ref),
+    ['deepseek/deepseek-v4.1-flash', 'codex/gpt-6-sol'],
+  )
+  assert.equal(await rt.defaultModel(), 'deepseek/deepseek-v4.1-flash')
+  assert.deepEqual(
+    entries.find(entry => entry.ref === 'codex/gpt-6-sol')?.reasoning?.efforts.map(effort => effort.id),
+    ['low', 'high'],
+  )
+  await assert.rejects(rt.resolveModel('codex/gpt-6-sol'), /not available/)
 })
 
 test('a model is named by its ref, or by an id or name only one provider serves', async () => {

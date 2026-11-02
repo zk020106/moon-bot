@@ -1,10 +1,10 @@
-// Service composition root: host runtime, store, engines, policy and transport wiring.
 import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { createRuntime } from '../index.ts'
 import type { HostContext, PromptSection } from '../host/host-types.js'
 import { BUILTIN_CAPABILITIES, offeredTools } from '../engine/capabilities.ts'
 import { BuiltinRuntime } from '../engine/builtin/runtime.ts'
+
 import { sqliteTranscriptOf } from '../engine/builtin/transcript.ts'
 import { engineAgentOf } from '../engine/builtin/bridge.ts'
 import type { EngineServices, PromptSource, ResolvedModel } from '../engine/builtin/services.ts'
@@ -29,10 +29,10 @@ import { gateOfPreset } from '../engine/permission-presets.ts'
 import { PermissionPresets } from './permission-presets.ts'
 import { LocalRunner } from '../engine/runner.ts'
 import { localEngineCatalog } from '../engine/acp/discovery.ts'
+import { listModels } from '../engine/acp/model-list.ts'
 import { detailOfPermission } from '../engine/acp/permission.ts'
 import { RelayRegistry } from './relay.ts'
 import { collectDeliverables } from '../host/deliverables.ts'
-/** The host runtime's own shape, as the wiring reads it. */
 import { EXCLUDED_TOOLS, surfacedMemories } from './engine-helpers.ts'
 import type { Runtime, WiredService, WireOptions } from './engine-helpers.ts'
 export type { Runtime, WiredService, WireOptions } from './engine-helpers.ts'
@@ -55,6 +55,7 @@ export function wireService(options: WireOptions): WiredService {
       attachments,
       approval,
       engineCatalog: localEngineCatalog,
+      cliModels: listModels,
       permissionPresets: presets,
     },
     // The providers and models modules read the LLM service through the context; the
@@ -260,6 +261,13 @@ export function wireService(options: WireOptions): WiredService {
   const runner = new LocalRunner({
     builtin: engine,
     emit: emitEvent,
+    home: options.home,
+    endpoints: () =>
+      (options.llm.listProviders?.() ?? []).flatMap(provider => {
+        const route = options.llm.resolveRoute(provider.id)
+        if (route === undefined || route.models.length === 0) return []
+        return [{ id: provider.id, name: provider.name, baseUrl: route.baseUrl, ...(route.apiKey !== undefined ? { apiKey: route.apiKey } : {}), models: route.models.map(model => ({ id: model.id, name: model.name ?? model.id })) }]
+      }),
     relay,
     transcript: services.transcript,
     requestPermission: async (sessionId, params) => {
@@ -317,7 +325,6 @@ export function wireService(options: WireOptions): WiredService {
   context.effect(() => scheduler.start(), 'moon-bot: schedule poll')
 
   context.resolveAgentWith(agentOf)
-
   // A history page from the store, in its own module: the chat's pagers and the failed
   // turn's line share it.
   context.pageWith(historyPageOf(store))

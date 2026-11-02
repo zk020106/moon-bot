@@ -10,6 +10,8 @@ export interface LocalAgent {
   readonly args: readonly string[]
   readonly key: string
   readonly kind: 'acp' | 'unsupported'
+  /** How its model list is read. Absent: this build cannot list models for it. */
+  readonly catalog?: 'acp-config' | 'app-server' | undefined
   readonly path?: string
   readonly version?: string
   readonly reason?: string
@@ -21,6 +23,7 @@ interface Candidate {
   readonly label: string
   readonly command: string
   readonly kind: LocalAgent['kind']
+  readonly catalog?: LocalAgent['catalog']
   readonly args?: readonly string[]
   readonly reason?: string
 }
@@ -38,7 +41,7 @@ const CANDIDATES: readonly Candidate[] = [
   // different protocol; listing them as ACP made a listing look like working support while
   // every handshake failed. They stay discoverable, marked unsupported, with the reason and
   // the adapter that would make them work.
-  { id: 'claude-acp', label: 'Claude (ACP)', command: 'claude-agent-acp', kind: 'acp' },
+  { id: 'claude-acp', label: 'Claude (ACP)', command: 'claude-agent-acp', kind: 'acp', catalog: 'acp-config' },
   {
     id: 'claude',
     label: 'Claude',
@@ -46,15 +49,16 @@ const CANDIDATES: readonly Candidate[] = [
     kind: 'unsupported',
     reason: 'Native CLI, not an ACP agent · 原生 CLI，不是 ACP；需 claude-agent-acp 适配器',
   },
-  { id: 'codex-acp', label: 'Codex (ACP)', command: 'codex-acp', kind: 'acp' },
-  { id: 'opencode', label: 'OpenCode', command: 'opencode', kind: 'acp' },
-  { id: 'gemini', label: 'Gemini', command: 'gemini', kind: 'acp' },
+  { id: 'codex-acp', label: 'Codex (ACP)', command: 'codex-acp', kind: 'acp', catalog: 'acp-config' },
+  { id: 'opencode', label: 'OpenCode', command: 'opencode', kind: 'acp', catalog: 'acp-config' },
+  { id: 'gemini', label: 'Gemini', command: 'gemini', kind: 'acp', catalog: 'acp-config' },
   {
     id: 'codex',
     label: 'Codex',
     command: 'codex',
     kind: 'unsupported',
-    reason: 'Native CLI, not an ACP agent · 原生 CLI，不是 ACP；需 codex-acp 适配器',
+    catalog: 'app-server',
+    reason: 'Model list only, via app-server · 只能列模型（app-server），回合还不能跑',
   },
   {
     id: 'cursor-agent',
@@ -119,6 +123,7 @@ export function discoverLocalAgents(): readonly LocalAgent[] {
       args: candidate.args ?? [],
       key: candidate.id,
       kind: candidate.kind,
+      ...(candidate.catalog === undefined ? {} : { catalog: candidate.catalog }),
       ...(path === undefined ? {} : { path }),
       ...(version === undefined ? {} : { version }),
       ...(candidate.reason === undefined ? {} : { reason: candidate.reason }),
@@ -134,6 +139,7 @@ export function discoverLocalAgents(): readonly LocalAgent[] {
         args: ['-y', candidate.npxPackage],
         key: candidate.id,
         kind: 'acp' as const,
+        catalog: 'acp-config',
         version: candidate.npxPackage,
         onDemand: true,
       }))

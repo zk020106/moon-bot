@@ -178,6 +178,8 @@ export interface ModelEntry {
   maxTokens?: number
   input?: readonly string[]
   needsKey?: boolean
+  /** False when the row is only a catalog entry; selecting it cannot run a turn yet. */
+  runnable?: boolean
   reasoning?: ModelReasoning
 }
 

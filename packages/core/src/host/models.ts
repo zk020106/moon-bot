@@ -122,6 +122,45 @@ export function install(rt: HostRuntime): void {
           if (reasoning !== undefined) entry.reasoning = reasoning
         }),
     )
+    // Codex lists models over app-server. A listed model is not a runnable engine.
+    try {
+      const listCli = ctx.get<{
+        (
+          spec: { command: string; args: readonly string[] },
+          timeoutMs?: number,
+        ): Promise<readonly { id: string; name: string; hidden: boolean }[]>
+      }>('cliModels')
+      const codex =
+        listCli === undefined
+          ? []
+          : ((await listCli({ command: 'codex', args: ['app-server'] }, 8_000)) as readonly {
+              id: string
+              name: string
+              hidden: boolean
+              efforts?: readonly string[]
+            }[])
+      for (const model of codex) {
+        if (model.hidden) continue
+        entries.push({
+          ref: `codex/${model.id}`,
+          provider: 'codex',
+          providerName: 'Codex',
+          id: model.id,
+          name: model.name,
+          runnable: false,
+          ...((model.efforts ?? []).length === 0
+            ? {}
+            : {
+                reasoning: {
+                  efforts: (model.efforts ?? []).map(id => ({ id, name: id })),
+                  ...(model.efforts?.[0] !== undefined ? { defaultEffort: model.efforts[0] } : {}),
+                },
+              }),
+        })
+      }
+    } catch {
+      /* the CLI is absent or not signed in; the provider list still stands */
+    }
     catalogCache = { at: Date.now(), value: entries }
     return entries
   }
@@ -132,15 +171,18 @@ export function install(rt: HostRuntime): void {
     return selection?.provider && selection?.model ? `${selection.provider}/${selection.model}` : undefined
   }
   // The profile default model of the host, when it is served; else the first served model.
+  const runnable = (entries: readonly ModelEntry[]): readonly ModelEntry[] =>
+    entries.filter(entry => entry.runnable !== false)
   function pickDefault(entries: readonly ModelEntry[]): string | undefined {
+    const choices = runnable(entries)
     const ref = defaultRef()
-    return entries.find(entry => entry.ref === ref)?.ref ?? entries[0]?.ref
+    return choices.find(entry => entry.ref === ref)?.ref ?? choices[0]?.ref
   }
   const defaultModel = async (): Promise<string | undefined> => pickDefault(await catalog())
 
   // A full `provider/model` ref, or a model id or name that only one provider serves.
   async function resolveModel(text: unknown): Promise<string> {
-    const entries = await catalog({ fresh: true })
+    const entries = runnable(await catalog({ fresh: true }))
     const wanted = String(text ?? '').trim()
     const exact = entries.find(entry => entry.ref === wanted)
     if (exact) return exact.ref
@@ -160,7 +202,7 @@ export function install(rt: HostRuntime): void {
   async function desiredModel(bot: StoredBot): Promise<string | undefined> {
     if (!bot.model) return undefined
     const entries = await catalog()
-    const served = new Set(entries.map(entry => entry.ref))
+    const served = new Set(runnable(entries).map(entry => entry.ref))
     return [bot.model, bot.appliedModel].find(ref => ref && served.has(ref)) ?? pickDefault(entries)
   }
 
