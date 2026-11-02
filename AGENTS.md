@@ -6,11 +6,11 @@
 
 Moon Bot 是一支长期存在的 Bot 小队，跑在自己的运行时上，不安装 DeepSeek Harness。仓库是三个 pnpm workspace 包（见根 `pnpm-workspace.yaml`；过渡期仍用 `packages/core/` / `apps/desktop/` / `apps/connect/` 目录名）：
 
-- `packages/core/`（`moon-bot-core`）：产品本体，TypeScript。`src/host/` 是 host 服务（roster 与 store、工具、回合与投递、群聊、对话分段、记忆、定时、能力、`api/bot` 通道）；`src/engine/` 是 `AgentRuntime` 接缝和两个实现（内置 pi kernel、ACP 适配器）；`src/store/` 是 SQLite 存储；`src/service/` 是 Fastify 服务和它的装配；`src/client/` 是 React 界面；`src/web-search/` 是 `auto` 搜索提供方。
+- `packages/core/`（`moon-bot-core`）：产品本体，TypeScript。`src/host/` 是 host 服务（roster 与 store、工具、回合与投递、群聊、对话分段、记忆、定时、能力、`api/bot` 通道）；`src/engine/` 是 `AgentRuntime` 接缝与它的实现（内置 pi kernel、ACP 适配器、app-server 客户端）；`src/store/` 是 SQLite 存储；`src/service/` 是 Fastify 服务和它的装配；`src/client/` 是 React 界面；`src/web-search/` 是 `auto` 搜索提供方。
 - `apps/desktop/`（`moon-bot`）：Windows、Linux、macOS 的桌面应用，TypeScript。窗口加载 Moon Bot 自己起的服务地址；主进程经 esbuild 打包。
 - `apps/connect/`（`moon-bot-connect`）：把本机 ACP agent 接到远程中转的一条命令，见 [远程 Agent 设计](docs/plans/2026-10-27-remote-agents.md)。
 
-运行时：服务（鉴权、静态界面、SSE feed）、host 服务、SQLite 上的内置引擎、策略引擎、调度器和连接器层。`@earendil-works/pi-agent-core` + `pi-ai` 是仅有的 agent loop 依赖，其余都是我们自己的。
+运行时：服务（鉴权、静态界面、SSE feed）、host 服务、SQLite 上的内置引擎、策略引擎、调度器和连接器层。内置引擎用 `@earendil-works/pi-agent-core` + `pi-ai`；接缝后面还允许 ACP 适配器和厂商 SDK 客户端（见硬规则 1）。
 
 这个 Bot 小队：
 
@@ -22,7 +22,7 @@ Moon Bot 是一支长期存在的 Bot 小队，跑在自己的运行时上，不
 
 ## 硬规则
 
-1. **运行时必须是我们自己的。** Bot 功能走 host 服务和 `AgentRuntime` 接缝；kernel 留在接缝后面（内置引擎或 ACP 适配器），host 代码永远不直接调用它。`@deepseek-ai` 已从 `packages/core/`、`apps/desktop/` 的依赖里移除，不要加回来；`packages/core/src/host/host-types.d.ts` 只是历史接缝留下的**类型**声明（只能 `import type`），`apps/desktop/src/move-data.ts` 只把 `DSH_HOME`/`~/.dsh` 当作「别的应用的数据目录」来避开，都不是运行时依赖。
+1. **引擎在接缝后面，接缝本身是我们的。** Bot 功能走 host 服务和 `AgentRuntime` 接缝；引擎实现（内置 pi、ACP 适配器、厂商 SDK 客户端）留在接缝后面，host 代码永远不直接调用它。接缝后面的实现**可以**依赖厂商 SDK（如 `@anthropic-ai/claude-agent-sdk`、`@openai/codex` 的 app-server 协议），也可以拉起外部 CLI——但必须通过 `AgentRuntime` 的五个方法暴露，不得让 host 直接 import 引擎内部。`packages/core/src/host/host-types.d.ts` 只是历史接缝留下的**类型**声明（只能 `import type`），`apps/desktop/src/move-data.ts` 只把 `DSH_HOME`/`~/.dsh` 当作「别的应用的数据目录」来避开。**新增引擎依赖要在 `docs/plans/` 里写明理由和版本策略**，并接受它有厂商版本跟着走的代价。
 2. **不要密钥。** 永远不要写、打印或提交 API key、token、cookie 或数据目录里的密钥。测试用 mock 模型（[`packages/core/dev/mock-llm.ts`](packages/core/dev/mock-llm.ts)），不需要 key。
 3. **只用原创材料。** 不要从别的产品或网站复制代码、文字、图标、logo 或图形。只有与 Apache-2.0 兼容的许可证是例外：写明出处，并把它的 notice 加进 `NOTICE`。
 4. **`client.js` 和 `dist/` 是生成物，不提交。** 根 `postinstall` 在安装时构建它们；改 `packages/core/src/` 后运行 `pnpm run build`（或 `cd packages/core && pnpm run build`）。永不手改产物，永不提交产物（`packages/core/client.js`、`packages/core/dist/`、`apps/desktop/ui/dist/`、`apps/desktop/dist-main/` 都在 `.gitignore` 里）。
@@ -68,7 +68,7 @@ pnpm --filter moon-bot run web         # 网页版：密码页 + 服务，默认
 
 - `packages/core/src/index.ts`：模块入口（模块顺序和 runtime 对象）。`packages/core/index.js`、`packages/core/client.js`、`packages/core/dist/` 都是生成物（永不提交）。
 - `packages/core/src/host/`：host 服务（[分区文档](packages/core/src/host/AGENTS.md)）。
-- `packages/core/src/engine/`：`AgentRuntime` 接口与事件、内置引擎（`builtin/`：pi 适配器、runtime、bridge、services）、ACP 适配器（`acp/`）、工具注册表、策略引擎、MCP 连接器。
+- `packages/core/src/engine/`：`AgentRuntime` 接口与事件、内置引擎（`builtin/`：pi 适配器、runtime、bridge、services）、ACP 适配器（`acp/`，含 app-server 与厂商协议客户端）、工具注册表、策略引擎、MCP 连接器。
 - `packages/core/src/store/`：SQLite 存储——迁移、会话与消息、任务、记忆索引、策略计数、远程邀请（[迁移不变量](packages/core/src/host/AGENTS.md)）。
 - `packages/core/src/service/`：Fastify 服务、host context、凭证与设置、服务商目录、调度器、附件、审批桥、记忆同步、引擎装配（[分区文档](packages/core/src/service/AGENTS.md)）。
 - `packages/core/src/client/`：浏览器侧界面——侧栏、聊天、面板、主题、形象、Bot 浏览器面板（[分区文档](packages/core/src/client/AGENTS.md)）。
@@ -113,7 +113,7 @@ pnpm --filter moon-bot run web         # 网页版：密码页 + 服务，默认
 
 ## 安全与审批
 
-- **运行时是自己的**（硬规则 1）：Bot 功能经 host 服务和 `AgentRuntime` 接缝，kernel 在接缝后面。
+- **引擎在接缝后面**（硬规则 1）：Bot 功能经 host 服务和 `AgentRuntime` 接缝；引擎实现可以是内置 pi、ACP 适配器或厂商 SDK 客户端，都在接缝后面。
 - **审批默认开启。** [`packages/core/src/engine/policy.ts`](packages/core/src/engine/policy.ts) 按 L0–L4 风险分级：L0–L2 直接执行；L3/L4 在每个会话的每日预算内执行，超出后逐次审批（默认 L3 20 次/日、L4 5 次/日）。审批由 [`packages/core/src/host/approvals.ts`](packages/core/src/host/approvals.ts) 接到界面卡片和群聊，用户答一次或拒绝；「Always allow for this Bot」是用户给单个 Bot 调高权限预设（[`packages/core/src/client/approval-always.ts`](packages/core/src/client/approval-always.ts)），不是产品默认。
 - **红线：不要让产品滑向默认放行。** 不做 `approvalPolicy: never` 式的全局开关，也不做等价物：默认无限预算、默认自动允许、静默放行、或不经用户就替 Bot 提权。该问的必须问，问到的请求要由用户答（允许一次/拒绝）才算数，不能由服务端或模型代答；拒绝文案不给出申诉口（[`packages/core/test/policy.test.ts`](packages/core/test/policy.test.ts) 锁住了这一点）。
 - **改审批行为必须走设计文档。** 改风险等级表、每日预算、审批默认值、拒绝文案，都算改已定设计：先在 `docs/plans/` 写或改设计、和维护者确认，再动代码和测试。哪些动作必须每次问以设计文档为准（例如 [浏览器与电脑的边界](docs/plans/2026-10-28-browser-and-computer-boundaries.md) 规定表单提交、登录、支付、删除账号逐次审批，不受自动放行影响）。
