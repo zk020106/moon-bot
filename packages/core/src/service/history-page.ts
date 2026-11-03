@@ -18,7 +18,9 @@ export const historyPageOf =
     })
     const max = Math.max(1, input.maxMessages ?? 60)
     const hasMore = rows.length > max
-    const shown = hasMore ? rows.slice(0, max) : rows
+    // `pageBetween` answers oldest-first, so the extra row it read to prove there is more
+    // is at the START. Keeping the first `max` would drop the newest one instead.
+    const shown = hasMore ? rows.slice(rows.length - max) : rows
     return {
       records: shown.flatMap((row): { seq: number; event: { type: string; time: number; data: unknown } }[] => {
         if (row.role === 'user') {
