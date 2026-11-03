@@ -1,13 +1,11 @@
-// ACP adapter: runs an AgentRuntime over a local or relay ACP transport.
 import { randomUUID } from 'node:crypto'
 import type { EngineEvent } from '../events.ts'
 import type { AgentRuntime, CancelReason, TurnInput, TurnMessage } from '../runtime.ts'
 import { callFailureOf } from '../failure.ts'
 import { matchPermissionOutcome, type PermissionRequestParams } from './permission.ts'
 import { LineProtocol, UPDATE_OF, type Inbound, type JsonRpcNotification, type JsonRpcRequest } from './protocol.ts'
-import { configOptionsOf } from './session-config.ts'
-import { configOf, refusedTurn, setConfig, type SettingsHost } from './session-settings.ts'
-import type { ConfigSetResult } from './session-config.ts'
+import { configOptionsOf, type ConfigSetResult } from './session-config.ts'
+import { configOf, refusedTurn, setConfig, startFailureOf, type SettingsHost } from './session-settings.ts'
 import {
   eventsOfUpdate,
   type AcpAgentOptions,
@@ -17,7 +15,6 @@ import {
 } from './runtime-types.ts'
 export { eventsOfUpdate } from './runtime-types.ts'
 export type { AcpAgentOptions, AcpStoredMessage, Waiter, AgentSession } from './runtime-types.ts'
-
 export class AcpRuntime implements AgentRuntime {
   private nextId = 1
   private readonly pending = new Map<number, Waiter>()
@@ -38,6 +35,7 @@ export class AcpRuntime implements AgentRuntime {
     session.transcriptTail = next.catch(() => undefined)
     return next
   }
+
   private readonly sessions = new Map<string, AgentSession>()
   private started: Promise<void> | undefined
   private readonly options: AcpAgentOptions
@@ -114,7 +112,10 @@ export class AcpRuntime implements AgentRuntime {
       await this.start()
       acpId = await this.openSession(input)
     } catch (error) {
-      for (const event of await refused(error instanceof Error ? error.message : String(error))) yield event
+      // An agent that never came up answers with its own words ("Invalid params"), which
+      // reads like a model problem. Say which engine failed, so the fix is obvious.
+      const raw = error instanceof Error ? error.message : String(error)
+      for (const event of await refused(startFailureOf(this.options.clientName ?? 'the agent', raw))) yield event
       return
     }
     const session = this.sessions.get(input.sessionId)

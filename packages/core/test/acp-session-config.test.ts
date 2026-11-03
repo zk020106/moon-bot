@@ -52,3 +52,11 @@ test('a custom endpoint rides in the environment, and a key stays literal', () =
   assert.equal(overlay.provider.magpie?.options.apiKey, '$'.repeat(2) + 'SECRET!')
   assert.equal(overlay.provider.empty, undefined)
 })
+
+test('a start failure names the engine and how to leave it', async () => {
+  const { startFailureOf } = await import('../src/engine/acp/session-settings.ts')
+  const line = startFailureOf('Codex (ACP)', 'Invalid params')
+  assert.match(line, /Codex \(ACP\) could not start this turn/)
+  assert.match(line, /Invalid params/)
+  assert.match(line, /built-in engine/)
+})

@@ -62,3 +62,7 @@ export async function refusedTurn(
   for (const event of events) host.emit(input.sessionId, event)
   return events
 }
+
+/** The line a failed start leaves: which engine, its own words, and how to undo it. */
+export const startFailureOf = (name: string, raw: string): string =>
+  `${name} could not start this turn: ${raw}. Switch this Bot back to the built-in engine if it should not use ${name}.`
