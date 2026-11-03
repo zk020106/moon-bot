@@ -1,12 +1,11 @@
+import type { PendingSends } from './pending-sends.ts'
+import { sendWithPending } from './send-with-pending.ts'
 import { countCards, heldCardKey } from './sources.ts'
 import { errorCopy } from './i18n.ts'
 import { noteClientError } from './diagnostics.ts'
 
-// The actions every window that draws the Bot views shares: dialogs and panels (the `ui`
-// source), requests to the host, and the notes the transcript keeps. The shell around the
-// views adds navigation and its own panels. `after` reads the team again once a request
-// is done; `partFor` maps a Bot id, or any part of its chat, to its current part.
-// Shared UI state for overlays and action-failure feedback.
+// The actions every window that draws the Bot views shares. `after` reads the team again
+// once a request is done; `partFor` maps a Bot id, or any part of its chat, to its part.
 export interface UiState {
   newChat?: string | null | undefined
   palette?: { token: number; query?: string } | null | undefined
@@ -56,9 +55,10 @@ export interface TeamActionsDeps {
   cards: Store<Cards>
   heldCards: Store<Cards>
   turnClock: Store<TurnClock>
+  pending?: PendingSends | undefined
 }
 
-export function teamActions({ call, after, partFor, roster, ui, live, cards, heldCards, turnClock }: TeamActionsDeps) {
+export function teamActions({ call, after, partFor, roster, ui, live, cards, heldCards, turnClock, pending }: TeamActionsDeps) {
   // A memory is a Bot's or a group chat's; both are opened by id.
   const memoryOf = (id: string) => (roster.getSnapshot().roomsById?.[id] ? { roomId: id } : { botId: id })
   return {
@@ -199,7 +199,7 @@ export function teamActions({ call, after, partFor, roster, ui, live, cards, hel
     setMain: (id: string, main = true, options: Record<string, unknown> = {}) =>
       after(call('set-main', { id, main, ...options })),
     updateRoom: (id: string, patch: Record<string, unknown>) => after(call('update-room', { id, ...patch })),
-    send: (sessionId: string, text: string) => after(call('send', { sessionId: partFor(sessionId), text })),
+    send: (sessionId: string, text: string) => sendWithPending({ pending, call, after, partFor }, sessionId, text),
     answerQuestion: (sessionId: string, questionId: string, answer: unknown) =>
       after(call('answer-question', { sessionId: partFor(sessionId), questionId, answer })),
     dismissQuestion: (sessionId: string) => after(call('dismiss-question', { sessionId })),

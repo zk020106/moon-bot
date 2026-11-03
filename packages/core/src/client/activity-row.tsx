@@ -51,6 +51,11 @@ export interface ActivityIndicatorProps {
   useWork?: StoreHook<{
     readonly turns?: Readonly<Record<string, number | undefined>> | undefined
   }>
+  /**
+   * When this session's newest local send happened, or 0. The host answers the click at
+   * once, so the row shows before any server report of a running turn.
+   */
+  usePendingAt?: StoreHook<ReadonlyMap<string, number>>
   actions: {
     clearLive(sessionId: string): void
   }
@@ -173,6 +178,7 @@ export function ActivityIndicator({
   useLive,
   useSession,
   useWork,
+  usePendingAt,
   actions,
 }: ActivityIndicatorProps) {
   const roster = useRoster(value => value)
@@ -186,6 +192,7 @@ export function ActivityIndicator({
   const liveKey = useLive?.(state => JSON.stringify(state[sessionId] ?? {})) ?? '{}'
   // A queued message waits for the next turn, so only a transcript or steering
   // send counts as fresh input.
+  const localAt = usePendingAt?.(map => map.get(sessionId) ?? 0) ?? 0
   const pendingInput = useSession(snapshot =>
     Math.max(0, ...(snapshot?.pendingSubmissions ?? []).filter(sub => sub.placement !== 'queued').map(sub => sub.time)),
   )
@@ -196,12 +203,15 @@ export function ActivityIndicator({
   const tools = entries.filter(entry => !entry.text && !entry.thinking).sort((a, b) => (a.at ?? 0) - (b.at ?? 0))
   // Group chats show who is typing on their own while members speak.
   const relaying = tools.some(entry => entry.relay)
-  const visible = running && !streaming && !relaying && (bot !== undefined || room !== undefined)
+  // A click the host has not answered yet is still something the user did: show the row
+  // for it, with the clock counting from the click.
+  const recentLocal = localAt > 0 && Date.now() - localAt < 15_000
+  const visible = (running || recentLocal) && !streaming && !relaying && (bot !== undefined || room !== undefined)
   const tool = tools.at(-1)
   const inputRef = useRef(0)
   // A steer keeps the run going, so nothing else resets the row: fresh input is
   // the newest activity, and the phrase and the clock restart from the send.
-  const inputAt = Math.max(inputRef.current, pendingInput)
+  const inputAt = Math.max(inputRef.current, pendingInput, localAt)
   inputRef.current = inputAt
   const want: WantPhrase | null = !visible
     ? null

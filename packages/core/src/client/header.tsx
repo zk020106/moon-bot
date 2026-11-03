@@ -71,6 +71,7 @@ export interface HeaderPillProps {
   useUi: StoreHook<UiState>
   useLive?: ActivityProps['useLive']
   useWork?: ActivityProps['useWork']
+  usePendingAt?: ActivityProps['usePendingAt']
   useStore?:
     | StoreHook<{
         readonly view?: string | undefined
@@ -149,6 +150,7 @@ export function HeaderPill({
   useUi,
   useLive,
   useWork,
+  usePendingAt,
   useStore,
   useConversationViews,
   selectView,
@@ -270,6 +272,7 @@ export function HeaderPill({
         actions,
         ...(useLive === undefined ? {} : { useLive }),
         ...(useWork === undefined ? {} : { useWork }),
+        ...(usePendingAt === undefined ? {} : { usePendingAt }),
       })}
       {
         // the host's way into its right sidebar sits in the session header this pill replaces.

@@ -7,6 +7,7 @@ import { workPhrase } from '../../../../packages/core/src/client/cells.ts'
 import { language, t } from '../../../../packages/core/src/client/i18n.ts'
 import { toolState } from '../../../../packages/core/src/client/mark.tsx'
 import { noteLeft, setUnread, sharedMap, toggleReaction } from '../../../../packages/core/src/client/shared-map.ts'
+import { createPendingSends } from '../../../../packages/core/src/client/pending-sends.ts'
 import { createSource, indexRoster, type Source } from '../../../../packages/core/src/client/sources.ts'
 import {
   EMPTY_SNAPSHOT,
@@ -139,6 +140,18 @@ export function createTeam() {
   const cards = createSource<CardsState>({})
   const heldCards = createSource<CardsState>({})
   const turnClock = createSource<TurnClockState>({})
+  // Sends the host has not drawn yet: the row shows on the click, not on a server report.
+  const pending = createPendingSends()
+  const pendingAt = createSource<Map<string, number>>(new Map())
+  const refreshPendingAt = (): void => {
+    const next = new Map<string, number>()
+    for (const sessionId of pending.sessionIds()) {
+      const at = pending.latestAt(sessionId)
+      if (at > 0) next.set(sessionId, at)
+    }
+    pendingAt.set(next)
+  }
+  pending.subscribe(refreshPendingAt)
   const update = createSource({ available: false, phase: 'idle' })
   const browserPages = createSource<Json>({})
   const browserTabs = createSource<Json>({})
@@ -264,6 +277,7 @@ export function createTeam() {
       cards: cards as never,
       heldCards: heldCards as never,
       turnClock: turnClock as never,
+      pending,
     }),
     // The full-pane overlays sit above the conversation, so opening one dismisses them.
     openSession: (id: string): void => {
@@ -479,6 +493,7 @@ export function createTeam() {
     useLive: use(live),
     useCards: use(cards),
     useTurnClock: use(turnClock),
+    usePendingAt: use(pendingAt),
     useUpdate: use(update),
     useRegistry: use(registry),
     useBrowserPages: use(browserPages),
