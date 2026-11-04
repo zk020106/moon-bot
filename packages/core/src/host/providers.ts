@@ -181,13 +181,16 @@ export function install(rt: HostRuntime): void {
         })
       if (ref === undefined && models.length === 0 && entry.error === undefined) continue
       const info = ref === undefined ? undefined : await found.credentials.describe(ref).catch(() => undefined)
+      const custom = entry.declared === true
       providers.push({
         id: entry.provider,
         name: entry.displayName,
         models,
         key: ref === undefined ? null : { configured: info?.configured === true, writable: info?.writable !== false },
         removable: entry.settingsNs === PI_AI && profileOf(entry, map, 'user') !== undefined && profileOf(entry, map, 'base') === undefined,
-        custom: entry.declared === true,
+        custom,
+        ...(custom && typeof profile?.baseURL === 'string' ? { baseURL: profile.baseURL } : {}),
+        ...(custom && typeof profile?.api === 'string' ? { api: profile.api } : {}),
         ...(entry.error ? { error: entry.error } : {}),
       })
     }
@@ -289,6 +292,29 @@ export function install(rt: HostRuntime): void {
     })
   }
 
+  // Change the endpoint (and optional display name) on a custom route the user added.
+  async function updateProvider(body: ProviderBody): Promise<Record<string, unknown>> {
+    const { settings } = usable()
+    const provider = String(body.provider ?? '').trim()
+    const map = sections(settings)
+    const entry = entryOf(provider)
+    if (entry === undefined || entry.settingsNs !== PI_AI || profileOf(entry, map) === undefined)
+      throw invalid(`${provider} is not set up`)
+    if (profileOf(entry, map, 'user') === undefined || profileOf(entry, map, 'base') !== undefined)
+      throw invalid(`${provider} comes with this setup and cannot be edited here`)
+    const current = { ...(profileOf(entry, map) as Record<string, unknown>) }
+    if (typeof body.baseURL === 'string' && body.baseURL.trim() !== '') current.baseURL = checkEndpoint(body.baseURL)
+    if (typeof body.name === 'string') {
+      const name = body.name.trim().slice(0, 80)
+      if (name !== '') current.displayName = name
+      else delete current.displayName
+    }
+    if (typeof body.api === 'string' && PROTOCOLS.includes(body.api)) current.api = body.api
+    await settings.mutate(PI_AI, [{ op: 'set', path: entry.settingsPath, value: current }], map.get(PI_AI)?.revision)
+    rt.dropCatalog()
+    return providersView()
+  }
+
   // Only a route the user added goes; its key goes with it when it is the one this page
   // derives and no other provider names it.
   async function removeProvider(provider: string): Promise<Record<string, unknown>> {
@@ -309,5 +335,5 @@ export function install(rt: HostRuntime): void {
     return providersView()
   }
 
-  Object.assign(rt, { keyRefs, missingKeys, providersView, setProviderKey, clearProviderKey, addProvider, discoverModels, removeProvider })
+  Object.assign(rt, { keyRefs, missingKeys, providersView, setProviderKey, clearProviderKey, addProvider, updateProvider, discoverModels, removeProvider })
 }

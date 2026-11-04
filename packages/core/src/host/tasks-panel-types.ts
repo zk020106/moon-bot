@@ -11,6 +11,7 @@ export interface PanelRuntime extends HostRuntime {
         readonly tool?: string
         readonly target?: string
         readonly said?: string
+  readonly title?: string
         readonly switching?: boolean
         readonly roomId?: string
       }
@@ -35,6 +36,7 @@ export interface PanelRuntime extends HostRuntime {
 export interface PanelLive {
   readonly turn?: unknown
   readonly sentAt?: number
+  readonly title?: string
 }
 export interface QueueMessage {
   readonly id?: string

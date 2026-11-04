@@ -129,12 +129,10 @@ export function AboutPage({
         onClick={() => run(actions.installUpdate())}>
         {phase === 'installing' ? t('Updating…') : phase === 'failed' ? t('Try again') : t('Update')}
       </button>
+    ) : update.enabled === false ? (
+      <span className='bt-set-hint'>{t('Update checks are off.')}</span>
     ) : (
-      <button
-        type='button'
-        className='bt-soft bt-soft-sm'
-        disabled={checking || update.enabled === false}
-        onClick={check}>
+      <button type='button' className='bt-soft bt-soft-sm' disabled={checking} onClick={check}>
         {checking ? t('Checking…') : t('Check for updates')}
       </button>
     )
@@ -178,7 +176,15 @@ export function AboutPage({
       </p>
     ) : null,
     update.source === 'web'
-      ? h(Section, { key: 'updates', title: t('Updates') }, h(Row, { label: productName(), hint: botHint(update) }))
+      ? h(
+          Section,
+          { key: 'updates', title: t('Updates') },
+          h(
+            Row,
+            { label: productName(), hint: botHint(update) },
+            update.notesUrl ? <a {...linkProps(update.notesUrl)}>{t('Releases')}</a> : repo ? <a {...linkProps(repo)}>{t('Open')}</a> : null,
+          ),
+        )
       : h(
           Section,
           { key: 'updates', title: t('Updates') },
@@ -212,7 +218,13 @@ export function AboutPage({
       h(
         Row,
         { label: t('Runtime'), hint: t("Moon Bot's own runtime with built-in and ACP engines.") },
-        <span>Apache-2.0</span>,
+        repo ? (
+          <a {...linkProps(`${repo.replace(/\/$/, '')}/blob/main/LICENSE`)} title={t('Apache-2.0 license')}>
+            Apache-2.0
+          </a>
+        ) : (
+          <span>Apache-2.0</span>
+        ),
       ),
       h(
         Row,

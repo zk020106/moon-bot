@@ -60,6 +60,7 @@ export function hostHandlers(rt: ChannelRuntime): ChannelHandlers {
     'provider-add': async body => ok(await rt.addProvider(body)),
     'provider-models': async body => ok(await rt.discoverModels(body)),
     'provider-remove': async body => ok(await rt.removeProvider(String(body.provider ?? ''))),
+    'provider-update': async body => ok(await rt.updateProvider(body)),
 
     ...grouped(
       rt,
@@ -165,7 +166,7 @@ export function hostHandlers(rt: ChannelRuntime): ChannelHandlers {
       // The window shows the Bot working from the send on: the engine's first event may be
       // a moment away (a turn queued behind another, an agent being spawned), and a turn
       // that fails says so in the chat. A send the engine never took takes the mark back.
-      rt.noteSent?.(sessionId, true)
+      rt.noteSent?.(sessionId, true, text)
       try {
         await ctx.sessionController.prompt(
           {

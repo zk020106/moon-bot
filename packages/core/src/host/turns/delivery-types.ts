@@ -32,6 +32,7 @@ export interface TurnEntry {
   since?: number | undefined
   /** When this Session's message was accepted, before its turn starts (the optimistic state). */
   sentAt?: number | undefined
+  title?: string | undefined
   texts: string[]
   shown: number
   info?: SourceInfo | undefined

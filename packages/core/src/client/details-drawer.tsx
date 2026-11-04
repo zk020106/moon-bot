@@ -24,6 +24,7 @@ import type {
   SessionsHook,
 } from './details-drawer-types.ts'
 import { t } from './i18n.ts'
+import { copyTranscript } from './share-conversation.ts'
 import type { I18nKey } from './i18n.ts'
 import { BrowserCards } from './details-drawer-browser.tsx'
 import { About, GroupOverview, MemberPile, PermissionRow, RunStats } from './details-drawer-overview.tsx'
@@ -107,10 +108,13 @@ export function DetailsDrawer({
         return false
       })
   const share = () => {
-    void navigator.clipboard?.writeText(transcript).then(() => {
+    copyTranscript(transcript, () => {
       setCopied(true)
+      setError('')
       setTimeout(() => setCopied(false), 1600)
-    })
+    }, reason => setError(t(reason === 'unavailable'
+      ? 'Copy is not available in this browser. Select the chat and copy manually.'
+      : 'Could not copy the conversation. Check clipboard permission and try again.')))
   }
   const errorLine = error ? (
     <div className='bt-panel-error' role='alert'>

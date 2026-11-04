@@ -285,6 +285,7 @@ test('a row says what the Bot is doing, in the order the host reports it', () =>
   )
   assert.equal(doingText({ tool: 'web_search' }, identity), 'Running {tool} {"tool":"web_search"}')
   assert.equal(doingText({ said: 'Looking at the logs' }, identity), 'Looking at the logs')
+  assert.equal(doingText({ title: 'bodydebug 5' }, identity), 'bodydebug 5')
   assert.equal(doingText({}, identity), 'Working')
 })
 

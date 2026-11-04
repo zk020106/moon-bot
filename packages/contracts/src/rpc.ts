@@ -141,6 +141,7 @@ export interface BotChannelRpcMap {
   'provider-add': { request: { protocol: string; base?: string; key?: string }; response: readonly Record<string, unknown>[] }
   'provider-models': { request: { provider?: string }; response: readonly string[] }
   'provider-remove': { request: { provider: string }; response: readonly Record<string, unknown>[] }
+  'provider-update': { request: Record<string, unknown>; response: Record<string, unknown> }
   'duplicate-bot': { request: { id: string }; response: BotView }
   'set-prefs': { request: { theme?: string | null; accent?: string | null; motion?: string | null }; response: Record<string, unknown> }
 

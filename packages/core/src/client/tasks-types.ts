@@ -12,6 +12,7 @@ export interface TaskRunning {
   tool?: string
   target?: string
   said?: string
+  title?: string
   switching?: boolean
   fromName?: string
   /** Messages waiting behind the running turn; the host leaves the field out at zero. */

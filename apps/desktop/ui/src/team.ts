@@ -341,6 +341,7 @@ export function createTeam() {
     addProvider: (body: Json): Promise<unknown> => after(call('provider-add', body)),
     providerModels: (body: Json): Promise<unknown> => call('provider-models', body),
     removeProvider: (provider: string): Promise<unknown> => after(call('provider-remove', { provider })),
+    updateProvider: (body: Json): Promise<unknown> => after(call('provider-update', body)),
     openModels: (): void => {
       actions.openSettings('models')
     },

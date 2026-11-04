@@ -22,6 +22,7 @@ interface Doing {
   readonly said?: string | undefined
   readonly note?: string | undefined
   readonly target?: string | undefined
+  readonly title?: string | undefined
 }
 
 /** One Bot's live work, as the team view sends it (`shared/rpc.ts`'s `WorkBot`). */
@@ -31,6 +32,7 @@ interface WorkBotView {
   readonly said?: string | undefined
   readonly note?: string | undefined
   readonly target?: string | undefined
+  readonly title?: string | undefined
   readonly switching?: boolean | undefined
   readonly roomId?: string | undefined
 }
@@ -119,11 +121,18 @@ export function install(rt: TurnsRuntime): void {
   // A message the chat accepted: the Bot is working from now on, before its engine has
   // said anything. The turn's own turn/start replaces the mark; a send the engine never
   // took takes it back.
-  const noteSent = (id: string, sent: boolean): void => {
+  const noteSent = (id: string, sent: boolean, text?: string): void => {
     if (!rt.isBotSession(id) && !rt.roomOf(id)) return
-    const entry = core.liveOf(id)
-    if (sent) entry.sentAt = Date.now()
-    else delete entry.sentAt
+    const entry = core.liveOf(id) as { sentAt?: number; title?: string }
+    if (sent) {
+      entry.sentAt = Date.now()
+      const title = typeof text === 'string' ? text.replace(/\s+/g, ' ').trim().slice(0, 160) : ''
+      if (title !== '') entry.title = title
+      else delete entry.title
+    } else {
+      delete entry.sentAt
+      delete entry.title
+    }
     rt.liveChanged?.()
   }
 
@@ -137,7 +146,14 @@ export function install(rt: TurnsRuntime): void {
       const owner = rt.groupOwners.get(id)
       const botId = owner?.botId ?? rt.chatOwners.get(id)
       if (botId === undefined || (owner !== undefined && bots[botId] !== undefined)) continue
-      bots[botId] = { since, ...doingOf(entry), ...(owner ? { roomId: owner.roomId } : {}) }
+      const doing = doingOf(entry)
+      const title = typeof (entry as { title?: string }).title === 'string' ? (entry as { title?: string }).title : undefined
+      bots[botId] = {
+        since,
+        ...doing,
+        ...(title && !doing.said ? { title } : {}),
+        ...(owner ? { roomId: owner.roomId } : {}),
+      }
     }
     for (const job of rt.switchJobs?.() ?? []) {
       const work: WorkBotView = { since: job.since, switching: true, ...(job.roomId ? { roomId: job.roomId } : {}) }
