@@ -6,6 +6,13 @@ export const FEEDBACK_CSS = `
 .bt-fb-what .bt-input-area{min-height:80px}
 .bt-fb-preview{cursor:default;padding:0}
 .bt-fb-preview pre{margin:0;width:100%;max-height:240px;overflow:auto;padding:10px 12px;box-sizing:border-box;font:11px/16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--bt-ink-2);white-space:pre-wrap;word-break:break-word;outline:none}
+.bt-fb-diag{margin:0;width:100%;max-height:240px;overflow:auto;padding:10px 12px;box-sizing:border-box;outline:none}
+.bt-fb-diag-table{width:100%;border-collapse:collapse;font-size:12px;line-height:18px;color:var(--bt-ink-2)}
+.bt-fb-diag-table th,.bt-fb-diag-table td{padding:4px 8px 4px 0;vertical-align:top;text-align:left;border-bottom:1px solid var(--bt-line,rgba(0,0,0,.08))}
+.bt-fb-diag-table th{width:28%;font-weight:600;color:var(--bt-ink);white-space:nowrap;padding-right:12px}
+.bt-fb-diag-table td{word-break:break-word}
+.bt-fb-diag-rest{margin:10px 0 0;padding:0;font:11px/16px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--bt-ink-2);white-space:pre-wrap;word-break:break-word;background:none;border:0}
+
 .bt-fb-primary{height:28px;border-radius:999px;border:0;background:var(--bt-accent);color:var(--bt-accent-ink,#fff);padding:0 14px;font-size:12px;cursor:pointer;transition:filter .12s ease;flex:none;white-space:nowrap}
 .bt-fb-primary:hover{filter:brightness(1.08)}
 .bt-fb-primary:active{filter:brightness(.94)}
