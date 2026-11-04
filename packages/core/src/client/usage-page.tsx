@@ -200,7 +200,7 @@ export function UsagePage({ roster, actions, focusId }: UsagePageProps): ReactEl
         <EmptyState
           art={<BotMark look={MAIN_LOOK} size={56} live />}
           title={view.scanning ? t('Reading your chats…') : t('No usage yet.')}
-          hint={t('Token usage shows up here after a model is called.')}
+          hint={t('Token counts appear after a chat uses a model. Older chats may take a moment to scan.')}
         />
       </div>
     )

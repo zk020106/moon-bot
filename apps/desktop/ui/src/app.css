@@ -315,8 +315,15 @@ html[data-mac] .mb-frame .mb-side {
 .mb-send:disabled {
   display: none;
 }
+.mb-stop {
+  background: var(--bt-ink);
+  color: var(--bt-paper, #fff);
+}
+.mb-stop:hover {
+  opacity: 0.85;
+}
 /* An empty composer offers voice chat where the send button goes; a group chat, dictation. */
-[data-composer-card]:has(.mb-send:disabled) .bt-voice {
+[data-composer-card]:has(.mb-send:disabled):not(:has(.mb-stop)) .bt-voice {
   display: inline-grid;
 }
 body[data-bt-room] [data-composer-card]:has(.mb-send:disabled) .bt-mic:not([aria-pressed="true"]) {
