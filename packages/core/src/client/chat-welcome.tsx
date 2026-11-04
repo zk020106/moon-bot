@@ -31,7 +31,7 @@ export function welcomeCopy(roster: Roster, sessionId: string): WelcomeCopy | nu
     if (isMainOf(roster, bot.id)) {
       return {
         title: t('Hi, I’m {name}', { name: bot.name }),
-        hint: t('I lead your Bot team. Tell me what you need, or ask me to set up a Bot for a job.'),
+        hint: t('I lead your Bot team. Tell me what you need, or open Settings → Connectors and Library to add tools and skills.'),
       }
     }
     return {
