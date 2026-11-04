@@ -16,6 +16,9 @@ export interface Provider {
   models: readonly ProviderModel[]
   error?: string
   removable?: boolean
+  custom?: boolean
+  baseURL?: string
+  api?: string
 }
 // The page's view of the host's provider set.
 export interface ProvidersView {
@@ -32,6 +35,7 @@ export interface ProvidersActions {
   setProviderKey: (id: string, key: string | null) => Promise<unknown>
   removeProvider: (id: string) => Promise<unknown>
   addProvider: (payload: Record<string, unknown>) => Promise<unknown>
+  updateProvider?: (payload: Record<string, unknown>) => Promise<unknown>
   providerModels: (payload: { baseURL: string; api: string; key: string }) => Promise<
     readonly {
       id: string

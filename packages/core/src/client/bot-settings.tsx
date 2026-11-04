@@ -104,12 +104,23 @@ export function BotSettingsForm({ bot, roster, actions, run }: BotSettingsFormPr
         </div>
       </Card>
       <Card title={t('Instructions')}>
-        <Row label={t('What this Bot does')} hint={t("Its job on the team. Part of the Bot's system prompt.")} stack>
+        <Row
+          label={t('What this Bot does')}
+          hint={
+            isMainBot
+              ? t('The Role above is its short persona. Instructions add lasting rules; leave empty to keep the built-in Main Bot guidance.')
+              : t("Its job on the team. Part of the Bot's system prompt.")
+          }
+          stack>
           <InlineText
             label={t('Instructions')}
             value={bot.instructions}
             multiline
-            placeholder={t('What this Bot is responsible for…')}
+            placeholder={
+              isMainBot && (bot.role ?? '').trim() !== ''
+                ? t('Optional. Role is already “{role}”. Add lasting rules here…', { role: bot.role })
+                : t('What this Bot is responsible for…')
+            }
             onSave={instructions => save({ instructions })}
           />
         </Row>

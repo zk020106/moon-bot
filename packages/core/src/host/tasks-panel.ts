@@ -109,6 +109,7 @@ export function install(rt: PanelRuntime): void {
         ...(entry.tool === undefined ? {} : { tool: entry.tool }),
         ...(entry.target === undefined ? {} : { target: entry.target }),
         ...(entry.said === undefined ? {} : { said: entry.said }),
+        ...(entry.title === undefined ? {} : { title: entry.title }),
         ...(entry.switching === true ? { switching: true } : {}),
         ...(fromName === undefined || fromName === '' ? {} : { fromName }),
       }

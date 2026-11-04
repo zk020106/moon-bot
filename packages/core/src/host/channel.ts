@@ -98,6 +98,7 @@ export interface ChannelRuntime extends HostRuntime {
   clearProviderKey(provider: string): Promise<void>
   setProviderKey(provider: string, value: unknown): Promise<void>
   addProvider(body: ChannelBody): Promise<Record<string, unknown>>
+  updateProvider(body: ChannelBody): Promise<Record<string, unknown>>
   discoverModels(body: ChannelBody): Promise<readonly Record<string, unknown>[]>
   removeProvider(provider: string): Promise<Record<string, unknown>>
 

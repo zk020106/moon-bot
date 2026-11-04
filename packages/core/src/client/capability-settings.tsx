@@ -281,7 +281,9 @@ export function BotCapabilitiesCard({
   const statuses = roster.capabilityStatuses?.[bot.id] ?? {}
   const [overrides, setOverrides] = useState<Record<string, boolean>>({})
   const [pending, setPending] = useState<Record<string, boolean>>({})
-  if (items.length === 0) return null
+  if (items.length === 0) {
+    return h(Card, { title: t('Capabilities') }, t('No shared capabilities yet. Add connectors in Settings → Connectors, then turn them on here.'))
+  }
   const isOn = (name: string): boolean => overrides[name] ?? attached.has(name)
   const toggle = (name: string, next: boolean): void => {
     setOverrides(previous => ({ ...previous, [name]: next }))

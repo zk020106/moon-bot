@@ -54,6 +54,9 @@ export function ProviderRow({
       </button>
       {open ? (
         <div className='bt-secret-edit'>
+          {provider.custom && provider.baseURL && actions.updateProvider ? (
+            <EndpointEditor provider={provider} apply={apply} actions={actions} />
+          ) : null}
           {provider.key?.writable ? <KeyEditor provider={provider} apply={apply} actions={actions} /> : null}
           {provider.key && !provider.key.writable ? (
             <div className='bt-set-hint'>
@@ -152,6 +155,57 @@ function KeyEditor({ provider, apply, actions }: { provider: Provider; apply: Ap
           {t('Saved.')}
         </div>
       ) : null}
+    </div>
+  )
+}
+
+function EndpointEditor({
+  provider,
+  apply,
+  actions,
+}: {
+  provider: Provider
+  apply: Apply
+  actions: ProvidersActions
+}) {
+  const [value, setValue] = useState(provider.baseURL ?? '')
+  const [saved, setSaved] = useState(false)
+  useEffect(() => {
+    setValue(provider.baseURL ?? '')
+    setSaved(false)
+  }, [provider.baseURL])
+  const ready = value.trim() !== '' && value.trim() !== (provider.baseURL ?? '')
+  const save = () => {
+    if (!ready) return
+    if (actions.updateProvider === undefined) return
+    void apply(actions.updateProvider({ provider: provider.id, baseURL: value })).then(ok => {
+      if (ok) setSaved(true)
+    })
+  }
+  return (
+    <div className='bt-secret-edit-block'>
+      <div className='bt-secret-edit-label'>{t('Endpoint')}</div>
+      <div className='bt-secret-row'>
+        <input
+          className='bt-bs-input'
+          value={value}
+          aria-label={t('Endpoint')}
+          placeholder='https://gateway.example/v1'
+          spellCheck={false}
+          onChange={event => {
+            setValue(event.target.value)
+            setSaved(false)
+          }}
+          onKeyDown={event => {
+            if (event.key === 'Enter' && !event.nativeEvent.isComposing) save()
+          }}
+        />
+        <button type='button' className='bt-soft bt-soft-sm' disabled={!ready} onClick={save}>
+          {saved ? <CheckIcon /> : null}
+          {saved ? t('Saved') : t('Save')}
+        </button>
+      </div>
+      <div className='bt-set-hint'>{t('The API base URL for this custom provider. Change it if the gateway moved.')}</div>
     </div>
   )
 }

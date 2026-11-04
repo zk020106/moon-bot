@@ -30,6 +30,7 @@ export function doingText(
       ? translate('Running {tool}', { tool: task.tool })
       : translate('Running {tool} on {target}', { tool: task.tool, target: task.target })
   if (task.said !== undefined) return task.said
+  if (task.title !== undefined && task.title.trim() !== '') return task.title
   return translate('Working')
 }
 export function reasonText(reason: string): string {
