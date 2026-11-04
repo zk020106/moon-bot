@@ -98,6 +98,21 @@ export interface ModelMenuOptionalActions {
   signIn?: (() => void) | undefined
   openShellOnboardingPanel?: ((provider?: string) => void) | undefined
   setProviderKey?: ((provider: string | undefined, value: string | null) => Promise<unknown>) | undefined
+  // When present (standalone Moon Bot), the empty-catalog dock embeds AddProvider instead of
+  // only sending the user to Settings → Models.
+  providers?: (() => Promise<unknown>) | undefined
+  addProvider?: ((payload: Record<string, unknown>) => Promise<unknown>) | undefined
+  providerModels?: ((payload: {
+    baseURL: string
+    api: string
+    key: string
+  }) => Promise<
+    readonly {
+      id: string
+      name?: string
+    }[]
+  >) | undefined
+  removeProvider?: ((id: string) => Promise<unknown>) | undefined
   signInEntry?: (() => SignInEntry | null) | undefined
   closeSignIn?: (() => void) | undefined
   accountT?: (() => (key: string, params?: Record<string, unknown>) => string) | undefined

@@ -222,3 +222,43 @@ test('a window without DSH settings asks for the missing API key in the first ch
   assert.equal(card.props.model.provider, 'official')
   assert.equal(nodes(tree, node => node.props.className === 'bt-model-chips').length, 0)
 })
+
+test('a window that can add providers embeds the add form on an empty catalog', () => {
+  const bot = { id: 'chief', name: 'Chief' }
+  const opened = []
+  const tree = ModelChoiceDock({
+    sessionId: bot.id,
+    useRoster: select => select({ ready: true, byId: { chief: bot }, models: [] }),
+    actions: {
+      updateBot: () => Promise.resolve(),
+      openModels: () => {
+        opened.push('models')
+      },
+      providers: () =>
+        Promise.resolve({
+          available: true,
+          providers: [],
+          addable: [{ id: 'sensenova', name: 'SenseNova' }],
+          protocols: ['openai-completions'],
+        }),
+      addProvider: () => Promise.resolve({ providers: [] }),
+      providerModels: () => Promise.resolve([]),
+      setProviderKey: () => Promise.resolve(),
+      removeProvider: () => Promise.resolve(),
+    },
+  })
+  // This harness does not invoke function components, so the embedded form shows up as a
+  // component node (same pattern as ModelKeyCard). Settings stays as a quiet fallback.
+  assert.equal(nodes(tree, node => node.props.className === 'bt-model-setup-wrap').length, 1)
+  assert.equal(
+    nodes(tree, node => typeof node.type === 'function' && node.props.actions !== undefined && node.props.onDone !== undefined)
+      .length,
+    1,
+  )
+  assert.deepEqual(
+    nodes(tree, node => node.type === 'button').map(button => button.children[0]),
+    ['Open settings to set up a custom model'],
+  )
+  nodes(tree, node => node.type === 'button')[0].props.onClick()
+  assert.deepEqual(opened, ['models'])
+})
