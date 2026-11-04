@@ -48,4 +48,4 @@ Exit code is 0 when every check passes and 1 otherwise.
 
 ## License
 
-Apache-2.0. Part of [Moon Bot](https://github.com/MoLi-MoChou/moon-bot).
+Apache-2.0. Part of [Moon Bot](https://github.com/zk020106/moon-bot).

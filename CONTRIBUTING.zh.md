@@ -81,12 +81,12 @@
 
 需要：
 
-- Node.js `22.19` 或更高（或 `24` 及以上）。
+- Node.js `≥ 22.18`（或 `24`+；与根目录 `engines` 一致）。
 - Git。
 - 通过 Corepack 启用的 pnpm，版本对齐根目录 `packageManager`（当前 `pnpm@10.18.3`；`engines.pnpm` 为 `>=10.18.3`）。不要用 npm 或 yarn 装本仓依赖。
 
 ```sh
-git clone https://github.com/MoLi-MoChou/moon-bot.git moon-bot
+git clone https://github.com/zk020106/moon-bot.git moon-bot
 cd moon-bot
 
 # 启用 Corepack，再激活 package.json 钉住的 pnpm 版本。

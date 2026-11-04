@@ -59,30 +59,42 @@ Moon Bot 的客户端界面、部分桌面端代码和交互实现参考并改�
 
 ## 部署网页版（推荐）
 
-需要 Docker。端口 8290，数据放在挂载的 `/data`。
+一条命令安装（需要 Docker；镜像 `ghcr.io/zk020106/moon-bot`，可匿名拉取）：
 
 ```sh
-git clone https://github.com/MoLi-MoChou/moon-bot.git && cd moon-bot
+curl -fsSL https://raw.githubusercontent.com/zk020106/moon-bot/main/deploy/install.sh | sh
+```
+
+脚本会生成访问密码（只打印一次）、拉镜像、在 8290 起服务并等到 `/healthz`。打开 `http://服务器IP:8290`，输入密码。
+
+### 第一次配置模型（OpenAI 兼容）
+
+1. 准备任意 OpenAI 兼容服务的 **API Key**（以及 Base URL，若不是官方 OpenAI）。
+2. 打开网页 → **设置** → 模型 / 供应商，填入 Key（和 Base URL）。
+3. 点 **获取可用模型**，给 Chief（或你的 Bot）选一个模型。
+4. 回到聊天发一句「你好」。
+
+也可用环境变量在 `.env` 里预置 Key（见 [deploy/.env.example](deploy/.env.example)）；界面里仍可改。
+
+更新：`./update.sh`（或 `curl …/install.sh | sh` 再跑一次）。回滚：`./rollback.sh`。细节见 [deploy/README.md](deploy/README.md)。
+
+### 其它安装方式
+
+自己构建镜像：
+
+```sh
+git clone https://github.com/zk020106/moon-bot.git && cd moon-bot
 docker build -t moon-bot .
 docker run -d --name moon-bot -p 8290:8290 \
   -e MOON_BOT_PASSWORD=换成你的访问密码 \
   -v moon-bot-data:/data moon-bot
 ```
 
-打开 `http://服务器IP:8290`，输入访问密码，然后在设置里配置模型。
-
-用 compose：在 `deploy/docker-compose.yml` 旁边放一个 `.env`（写 `MOON_BOT_PASSWORD=…`，以及模型服务的 Key，例如 `SENSENOVA_API_KEY=…`），然后：
+本机开发（**Node.js ≥ 22.18**，**pnpm ≥ 10.18.3**，用 Corepack）：
 
 ```sh
-docker compose -f deploy/docker-compose.yml up -d --build
-```
-
-数据（Bot、聊天、记忆、设置）在 `deploy/data`。更新：`git pull` 后重新执行上面这条命令。详见 [deploy/README.md](deploy/README.md)。
-
-本机试用（Node 22）：
-
-```sh
-pnpm install && pnpm --filter moon-bot run web     # http://127.0.0.1:8290，只监听本机时可以不设密码
+corepack enable && corepack prepare pnpm@10.18.3 --activate
+pnpm install && pnpm --filter moon-bot run web   # http://127.0.0.1:8290，本机可不设密码
 ```
 
 ### 环境变量
@@ -97,17 +109,9 @@ pnpm install && pnpm --filter moon-bot run web     # http://127.0.0.1:8290，只
 
 旧名字 `MOCHOU_*`、`DSH_BOT_*` 仍然有效。
 
-## 桌面版
+## 桌面版（暂缓）
 
-桌面版（Windows、Linux AppImage）自带全部运行时，不用另外安装。窗口加载的是 Moon Bot 自己的服务地址，与网页版同一套界面和通道。从 [Releases](https://github.com/MoLi-MoChou/moon-bot/releases) 下载。安装版启动时和每 4 小时检查一次更新，后台只下载变化的部分，提示「重启以更新」，不用重新安装，数据保留。便携版 exe 不能自我替换，需要手动下载新版。
-
-自己打包：
-
-```sh
-pnpm install
-pnpm run build
-pnpm --filter moon-bot run dist
-```
+当前优先网页版 Docker。Windows / Linux 桌面安装包的发布与 CI 打包先搁置；仓库里仍有 `apps/desktop` 源码，开发者可自行 `pnpm --filter moon-bot run dist`。旧的 GitHub Releases 可能过时，请以网页镜像为准。
 
 ## 开发
 
@@ -142,11 +146,14 @@ Moon Bot is a team of long-lived Bots: you create Bots, not chats. Chief, the li
 - **Workspace files:** preview images, PDF, Word/PowerPoint, Excel/CSV, Markdown, code/text, audio and video; download any file, or a folder as .zip (up to 64 MB), also in the web build behind its password. Other types get a file card with a Download button.
 - **Work steps hidden by default**, one line opens the full process panel; OpenUI cards for tables, to-dos, options and forms.
 
-Web / Docker:
+**Install the web app (recommended):**
 
 ```sh
-docker build -t moon-bot .
-docker run -d -p 8290:8290 -e MOON_BOT_PASSWORD=choose-one -v moon-bot-data:/data moon-bot
+curl -fsSL https://raw.githubusercontent.com/zk020106/moon-bot/main/deploy/install.sh | sh
 ```
 
-Desktop builds (Windows, Linux AppImage) update themselves in place from GitHub releases. License: Apache-2.0; see [NOTICE](NOTICE) for the DS Bot attribution and third-party notices.
+Public image: `ghcr.io/zk020106/moon-bot` (anonymous pull). Then open `http://HOST:8290`, enter the printed password, and in **Settings** add an OpenAI-compatible API Key → fetch models → chat.
+
+Local try: Node ≥ 22.18, pnpm ≥ 10.18.3 — `pnpm install && pnpm --filter moon-bot run web`.
+
+Desktop releases are deferred; use the Docker web image. License: Apache-2.0; see [NOTICE](NOTICE).

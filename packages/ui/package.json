@@ -38,8 +38,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MoLi-MoChou/moon-bot.git",
+    "url": "git+https://github.com/zk020106/moon-bot.git",
     "directory": "packages/ui"
   },
-  "homepage": "https://github.com/MoLi-MoChou/moon-bot/tree/main/packages/ui"
+  "homepage": "https://github.com/zk020106/moon-bot/tree/main/packages/ui"
 }

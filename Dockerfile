@@ -85,7 +85,7 @@ COPY NOTICE LICENSE ./
 ARG REVISION=unknown
 LABEL org.opencontainers.image.revision=$REVISION \
       org.opencontainers.image.title="Moon Bot" \
-      org.opencontainers.image.source="https://github.com/MoLi-MoChou/moon-bot"
+      org.opencontainers.image.source="https://github.com/zk020106/moon-bot"
 RUN echo "$REVISION" > /opt/moon-bot/REVISION
 
 ENV NODE_ENV=production \

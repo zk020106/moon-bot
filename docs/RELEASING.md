@@ -79,7 +79,7 @@ with `npm stage approve <id>`.
 A first install (or a rebuild of the whole stack) is one command:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/MoLi-MoChou/moon-bot/main/deploy/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/zk020106/moon-bot/main/deploy/install.sh | sh
 ```
 
 It writes `.env` once (generating a password and printing it), starts the container on 8290 and

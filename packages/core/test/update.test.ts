@@ -132,7 +132,7 @@ test('a registry install finds the newest version on the next registry and insta
   assert.equal(view.latest, '9.0.0')
   assert.equal(view.current, PKG.version)
   assert.equal(view.source, 'registry')
-  assert.equal(view.notesUrl, 'https://github.com/MoLi-MoChou/moon-bot/releases')
+  assert.equal(view.notesUrl, 'https://github.com/zk020106/moon-bot/releases')
   assert.equal(rt.updateStart().phase, 'installing')
   await flush()
   assert.deepEqual(installs, [[`${PKG.name}@9.0.0`, { registry: 'https://registry.npmmirror.com/' }]])
@@ -222,10 +222,10 @@ test('in the desktop app, which updates as a whole, it never asks the network an
 })
 
 test('the star count comes from the repository, is kept for an hour, and survives a failed answer', async () => {
-  const repo = 'https://api.github.com/repos/MoLi-MoChou/moon-bot'
+  const repo = 'https://api.github.com/repos/zk020106/moon-bot'
   const answers = { [repo]: new Error('offline') }
   const { rt, fetched } = start({ source: `${PKG.name}@^${PKG.version}`, answers })
-  assert.equal(rt.updateView().repoUrl, 'https://github.com/MoLi-MoChou/moon-bot')
+  assert.equal(rt.updateView().repoUrl, 'https://github.com/zk020106/moon-bot')
   assert.equal(await rt.repoStars(), null)
   answers[repo] = { stargazers_count: 42 } as unknown as Error
   assert.equal(await rt.repoStars(), 42)

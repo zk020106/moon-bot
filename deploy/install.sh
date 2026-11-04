@@ -2,7 +2,7 @@
 # One-command Moon Bot web install for a server (plan 阶段 A): fetch the published image,
 # write the environment file once, start the container and wait until /healthz answers.
 #
-#   curl -fsSL https://raw.githubusercontent.com/MoLi-MoChou/moon-bot/main/deploy/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/zk020106/moon-bot/main/deploy/install.sh | sh
 #   ./deploy/install.sh --tag main --port 8290 --dir /opt/moon-bot
 #
 # Options:
@@ -17,7 +17,7 @@
 # The data folder is created empty on a first install and never touched again; .env is
 # written only when it does not exist yet, so a rerun is an upgrade, not a reset.
 set -eu
-REPO="MoLi-MoChou/moon-bot"
+REPO="zk020106/moon-bot"
 REGISTRY="ghcr.io/zk020106/moon-bot"
 TAG="latest"
 PORT="8290"

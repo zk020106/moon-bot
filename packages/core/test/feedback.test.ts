@@ -12,7 +12,7 @@ const bundle = await build({
   write: false,
   external: ['react', 'react-dom'],
 })
-const ISSUES = 'https://github.com/MoLi-MoChou/moon-bot/issues/new'
+const ISSUES = 'https://github.com/zk020106/moon-bot/issues/new'
 
 // Settings → Feedback in a window whose `open` is `open`, with every state change kept.
 function page(window) {

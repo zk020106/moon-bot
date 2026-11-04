@@ -74,6 +74,6 @@ mac:
 # so the build itself never publishes (--publish never).
 publish:
   provider: github
-  owner: MoLi-MoChou
+  owner: zk020106
   repo: moon-bot
   releaseType: prerelease

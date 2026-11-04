@@ -6,7 +6,7 @@ import { productName, t } from './i18n.ts'
 export type RunWork = (work: Promise<unknown>) => Promise<boolean | undefined>
 type RowLike = React.ComponentType<Record<string, unknown>>
 
-const RELEASES_PAGE = 'https://github.com/MoLi-MoChou/moon-bot/releases'
+const RELEASES_PAGE = 'https://github.com/zk020106/moon-bot/releases'
 const linkProps = (href: string): Record<string, string> => ({
   className: 'bt-soft bt-soft-sm bt-about-link',
   href,

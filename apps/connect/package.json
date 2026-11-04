@@ -31,10 +31,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/MoLi-MoChou/moon-bot.git",
+    "url": "https://github.com/zk020106/moon-bot.git",
     "directory": "apps/connect"
   },
-  "homepage": "https://github.com/MoLi-MoChou/moon-bot/tree/main/apps/connect",
+  "homepage": "https://github.com/zk020106/moon-bot/tree/main/apps/connect",
   "keywords": [
     "moon-bot",
     "acp",
