@@ -11,6 +11,7 @@ import { wireService } from './engine.ts'
 import { FileCredentials } from './credentials.ts'
 import { FileSettings } from './settings.ts'
 import { StandaloneLlm } from './llm.ts'
+import { readinessOf } from './ready.ts'
 import { ModelsDevSync } from './models-dev.ts'
 import { RELAY_CLOSE_UNAUTHORIZED } from './relay.ts'
 import type { FetchRoute } from './context.ts'
@@ -121,7 +122,14 @@ export async function startService(options: ServiceOptions): Promise<StandaloneS
   app.addHook('onRequest', async (request, reply) => {
     const path = request.url.split('?')[0] ?? request.url
     // The relay authenticates with its own invite token, not the UI cookie.
-    if (path === '/login' || path === '/login/check' || path === '/healthz' || path === RELAY_PATH) return
+    if (
+      path === '/login' ||
+      path === '/login/check' ||
+      path === '/healthz' ||
+      path === '/readyz' ||
+      path === RELAY_PATH
+    )
+      return
     if (!authenticated(request)) {
       const accept = String(request.headers.accept ?? '')
       if (request.method === 'GET' && accept.includes('text/html')) {
@@ -148,6 +156,18 @@ export async function startService(options: ServiceOptions): Promise<StandaloneS
     return named === undefined || named === '' ? undefined : named
   }
   app.get('/healthz', async () => ({ ok: true, ...(revision() === undefined ? {} : { revision: revision() }) }))
+  // `/healthz` says the process is up. This says a turn could run: a deployment whose
+  // model gateway is unreachable is healthy and useless at the same time.
+  app.get('/readyz', async (_request, reply) => {
+    const ready = readinessOf({
+      home: options.home,
+      providers: llm.listProviders().map(provider => provider.id),
+      resolves: provider => llm.resolveRoute(provider) !== undefined,
+    })
+    await reply
+      .code(ready.ok ? 200 : 503)
+      .send({ ...ready, ...(revision() === undefined ? {} : { revision: revision() }) })
+  })
 
   // The remote-agent relay (2026-10-27 remote-agents): one WebSocket per connected
   // agent, carrying the ACP wire as text frames. Token in the query string; an invalid

@@ -88,6 +88,24 @@ health() {
   return 1
 }
 
+# Whether a turn could actually run. `health` says the process came up; this says the
+# model gateway is reachable and the data folder is writable. A deployment that reports
+# healthy while every reply fails is the failure this catches.
+ready() {
+  port=$(env_value MOON_BOT_PORT)
+  port=${port:-8290}
+  i=0
+  while [ "$i" -lt "$HEALTH_TRIES" ]; do
+    body=$(docker exec "$CONTAINER" curl -fsS "http://127.0.0.1:$port/readyz" 2>/dev/null) && {
+      printf '%s\n' "$body"
+      return 0
+    }
+    sleep "$HEALTH_WAIT"
+    i=$((i + 1))
+  done
+  return 1
+}
+
 # Read the store schema without opening the production database on the host. The image
 # already contains better-sqlite3, and the read-only bind mount prevents this helper from
 # changing data. A missing store is version zero; an unreadable store is an error.
@@ -268,8 +286,15 @@ rollback_previous() {
 
 if $COMPOSE up -d >/dev/null 2>&1 && health; then
   revision=$(docker exec "$CONTAINER" cat /opt/moon-bot/REVISION 2>/dev/null || echo unknown)
-  echo "update: healthy — $target (REVISION $revision)"
-  exit 0
+  if ready; then
+    echo "update: healthy — $target (REVISION $revision)"
+    exit 0
+  fi
+  # Up, but unable to serve: say so instead of reporting success.
+  echo "update: the container is up but NOT ready — $target (REVISION $revision)" >&2
+  echo "update: /readyz did not answer ok; the model gateway may be unreachable" >&2
+  echo "update: snapshot: $snapshot" >&2
+  exit 1
 fi
 
 echo "update: the new image did not become healthy" >&2
