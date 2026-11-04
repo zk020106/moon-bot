@@ -8,6 +8,7 @@ import { hostText, t } from './i18n.ts'
 import { useEscape } from './overlay-hooks.ts'
 import { manageModels } from './model-menu-manage.ts'
 import { groupModels } from './model-menu.tsx'
+import { canSetupProviderInline, FirstRunAddProvider, type FirstRunProvidersActions } from './model-choice-setup.tsx'
 import type {
   ModelEntry,
   ModelMenuOptionalActions,
@@ -42,6 +43,10 @@ export function ModelChoiceDock({ sessionId, useRoster, actions }: ModelChoiceDo
   const bot = roster.byId[sessionId]
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
+  const inline = canSetupProviderInline(actions)
+  // Standalone windows that can add a provider open the form on the empty catalog; the
+  // user can still fall back to Settings from a quiet chip.
+  const [adding, setAdding] = useState(inline)
   const shown = bot !== undefined && currentPart(bot) === sessionId && roster.ready
   useEffect(() => {
     if (shown) void actions.refreshModels?.()
@@ -79,9 +84,14 @@ export function ModelChoiceDock({ sessionId, useRoster, actions }: ModelChoiceDo
       : usable.length === 0
         ? t("Hi, I'm {name}. I don't have a model yet. How do you want to set one up?", { name: bot.name })
         : t("Hi, I'm {name}. Pick a model for me first. You can change it later in my details.", { name: bot.name })
+  const showSetup = usable.length === 0 && !keyFor && inline && adding
   const choices =
     usable.length === 0
-      ? setupChoices(actions).map(([label, run]) => (
+      ? setupChoices(actions, {
+          inline,
+          adding,
+          onAdd: () => setAdding(true),
+        }).map(([label, run]) => (
           <button key={label} type='button' className='bt-model-chip' onClick={run}>
             {label}
           </button>
@@ -133,6 +143,22 @@ export function ModelChoiceDock({ sessionId, useRoster, actions }: ModelChoiceDo
       </div>
       {keyFor ? (
         <ModelKeyCard key={keyFor.provider} model={keyFor} actions={actions} />
+      ) : showSetup ? (
+        <div className='bt-model-setup-wrap'>
+          <FirstRunAddProvider
+            actions={actions as FirstRunProvidersActions}
+            onDone={() => {
+              setAdding(false)
+            }}
+          />
+          {actions.openModels ? (
+            <div className='bt-model-chips' role='group' aria-label={t('More setup options')}>
+              <button type='button' className='bt-model-chip bt-model-chip-quiet' onClick={() => actions.openModels?.()}>
+                {t('Open settings to set up a custom model')}
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : (
         <div className='bt-model-chips' role='group' aria-label={t('Choose a model')}>
           {choices}
@@ -197,7 +223,10 @@ export function ModelKeyCard({ model, actions }: { model: ModelEntry; actions: M
 // and shell onboarding editors exist only where the the desktop app shell carries them;
 // never offer those chips when the window already has openModels, or they would be
 // dead ends beside the real path.
-export function setupChoices(actions: ModelMenuOptionalActions): [string, () => unknown][] {
+export function setupChoices(
+  actions: ModelMenuOptionalActions,
+  options: { inline?: boolean; adding?: boolean; onAdd?: () => void } = {},
+): [string, () => unknown][] {
   const openModels = actions.openModels
     ? ([
         t('Open settings to set up a custom model'),
@@ -212,6 +241,10 @@ export function setupChoices(actions: ModelMenuOptionalActions): [string, () => 
             actions.openShellSettingsPanel?.('models')
           },
         ] as [string, () => unknown])
+      : null
+  const addHere =
+    options.inline && !options.adding && options.onAdd
+      ? ([t('Add a provider'), options.onAdd] as [string, () => unknown])
       : null
   const choices: ([string, () => unknown] | null)[] = [
     actions.canSignIn?.()
@@ -230,7 +263,10 @@ export function setupChoices(actions: ModelMenuOptionalActions): [string, () => 
           },
         ]
       : null,
-    openModels,
+    addHere,
+    // When the dock already embeds AddProvider, Settings is offered beside the form, not as
+    // the only path.
+    options.inline && options.adding ? null : openModels,
   ]
   return choices.filter((choice): choice is [string, () => unknown] => choice !== null)
 }

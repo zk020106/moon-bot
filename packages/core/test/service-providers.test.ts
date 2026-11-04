@@ -82,10 +82,15 @@ test('the providers page adds a provider, and a Bot on it runs its turn', async 
       })
     ).json() as never
 
-  // The page's first read: available, with the built-in list to add from.
+  // The page's first read: available, with the built-in list to add from (SenseNova included).
   const first = await call('providers', {})
   assert.equal(first.ok, true)
   assert.equal((first.value as { available?: boolean }).available, true)
+  const addable = (first.value as { addable?: { id: string; name: string }[] }).addable ?? []
+  assert.ok(
+    addable.some(entry => entry.id === 'sensenova' && entry.name === 'SenseNova'),
+    `expected SenseNova in addable, got ${JSON.stringify(addable.map(entry => entry.id))}`,
+  )
 
   // Adding a provider with its key, as the page's form does.
   const added = await call('provider-add', {
