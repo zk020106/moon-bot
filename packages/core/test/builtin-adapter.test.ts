@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { toToolDeclaration } from '@earendil-works/pi-ai'
-import { piToolOf, toolSchemaOf } from '../src/engine/builtin/adapter.ts'
+import { isOfficialOpenAiHost, piModelOf, piToolOf, toolSchemaOf } from '../src/engine/builtin/adapter.ts'
 import type { ToolDefinition } from '../src/engine/builtin/services.ts'
 
 test('toolSchemaOf normalizes empty parameters to a valid JSON Schema object', () => {
@@ -128,4 +128,39 @@ test('toolSchemaOf normalizes nested schemas like ask_user without boolean requi
   const json = JSON.stringify(schema)
   assert.ok(!json.includes('"required":true'))
   assert.ok(!json.includes('"required":false'))
+})
+
+test('piModelOf leaves OpenAI hosts without custom compat', () => {
+  const model = piModelOf({
+    id: 'gpt-4o',
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: 'sk',
+    api: 'openai-completions',
+  })
+  assert.equal(model.api, 'openai-completions')
+  assert.equal('compat' in model && model.compat !== undefined, false)
+})
+
+test('piModelOf marks SenseNova-style custom hosts like OpenBot openai-compatible', () => {
+  const model = piModelOf({
+    id: 'sensenova-6.8-flash',
+    baseUrl: 'https://token.sensenova.cn/v1',
+    apiKey: 'sk',
+    api: 'openai-completions',
+  })
+  assert.equal(model.api, 'openai-completions')
+  assert.equal(isOfficialOpenAiHost(model.baseUrl), false)
+  assert.deepEqual(model.compat, {
+    supportsStore: false,
+    maxTokensField: 'max_tokens',
+    supportsUsageInStreaming: false,
+    supportsDeveloperRole: false,
+    supportsReasoningEffort: false,
+  })
+})
+
+test('isOfficialOpenAiHost recognizes Azure OpenAI v1 hosts', () => {
+  assert.equal(isOfficialOpenAiHost('https://my.openai.azure.com/openai/v1'), true)
+  assert.equal(isOfficialOpenAiHost('https://my.services.ai.azure.com/openai/v1'), true)
+  assert.equal(isOfficialOpenAiHost('https://api.deepseek.com'), false)
 })
