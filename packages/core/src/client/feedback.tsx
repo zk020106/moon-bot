@@ -4,6 +4,7 @@
 import { createElement as h, useEffect, useState } from 'react'
 import type { ChangeEvent, ReactNode } from 'react'
 import { clearClientErrors, clientErrors, clientFacts, failureLabel, issueUrl, WHAT_MAX } from './diagnostics.ts'
+import { DiagnosticsPreview } from './feedback-diagnostics-preview.tsx'
 import { dateLocale, t } from './i18n.ts'
 export { ErrorToast } from './feedback-toast.tsx'
 export const FeedbackIcon = () => (
@@ -231,9 +232,7 @@ export function FeedbackPage({ actions, run, Section, Row }: FeedbackPageProps) 
       ),
       preview ? (
         <div className='bt-set-row bt-fb-preview'>
-          <pre tabIndex={0} aria-label={t('Diagnostics')}>
-            {report?.markdown || t('Loading…')}
-          </pre>
+          <DiagnosticsPreview markdown={report?.markdown || ''} />
         </div>
       ) : null,
       h(

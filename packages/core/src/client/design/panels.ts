@@ -145,6 +145,8 @@ html[data-windows-titlebar]:not([data-fullscreen]) :is(.bt-pane,.bt-panel)::befo
 .bt-drawer-model{display:flex;flex-direction:column}
 .bt-drawer-model .bt-note{margin-top:6px}
 .bt-drawer-permission{display:flex;flex-direction:column}
+.bt-perm{display:flex;flex-direction:column;gap:6px}
+.bt-perm-hint{margin:0;font-size:12px;line-height:16px;color:var(--bt-ink-2)}
 .bt-seg button.bt-perm-danger,.bt-seg button.bt-perm-danger[aria-pressed=true],.bt-kv span.bt-perm-danger{color:var(--bt-danger)}
 
 /* Settings dialog: a 198px page list beside the page. */

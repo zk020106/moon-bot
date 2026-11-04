@@ -172,13 +172,15 @@ export function MemoryDialog({ owner, actions, leaving = false }: MemoryDialogPr
         ? count === 1
           ? t('1 entry')
           : t('{count} entries', { count })
-        : view.summarizing && view.summary
-          ? t('Updating…')
-          : view.summary && view.fresh
-            ? when
-              ? t('Updated {time}', { time: when })
-              : t('Updated just now')
-            : ''
+        : count === 0
+          ? t('Nothing saved yet')
+          : view.summarizing && view.summary
+            ? t('Updating…')
+            : view.summary && view.fresh
+              ? when
+                ? t('Updated {time}', { time: when })
+                : t('Updated just now')
+              : ''
   const busy = answer?.pending === true
   return (
     <div className='bt-mem-layer' data-leaving={leaving || undefined}>

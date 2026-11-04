@@ -22,12 +22,23 @@ const LABELS: Record<string, string> = {
   'workspace-write': 'Workspace',
   'danger-full-access': 'Full access',
 }
+const HINTS: Record<string, string> = {
+  'read-only': 'Can read files and the web, but cannot change files or run commands.',
+  'workspace-write': 'Can read and edit files in its working folder; asks before going further.',
+  'danger-full-access': 'Can change files and run commands with fewer limits. Use only when you trust the task.',
+}
 const DANGER = new Set<string>(['danger-full-access'])
 export const presetDanger = (value: string): boolean => DANGER.has(value)
 export const presetName = (value: string, catalog?: PresetCatalog): string => {
   const label = LABELS[value]
   if (label !== undefined) return String(t(label))
   return catalog?.options?.find(option => option.value === value)?.name ?? value
+}
+export const presetHint = (value: string, catalog?: PresetCatalog): string => {
+  const known = HINTS[value]
+  if (known !== undefined) return String(t(known))
+  const fromCatalog = catalog?.options?.find(option => option.value === value)?.description
+  return typeof fromCatalog === 'string' ? fromCatalog : ''
 }
 // The presets DeepSeek Harness offers, as one segmented choice. A pick shows at once
 // and holds until the saved value catches up, or falls back when `onPick` resolves
@@ -73,19 +84,24 @@ export function PermissionPicker({ catalog, saved, onPick, repick = false }: Per
     }
     send(value)
   }
+  const hint = presetHint(current, catalog)
   return (
-    <Segmented label={t('Permissions')} value={current}>
-      {catalog.options.map(option => (
-        <button
-          key={option.value}
-          type='button'
-          aria-pressed={option.value === current}
-          title={option.description}
-          onClick={() => pick(option.value)}
-          className={presetDanger(option.value) ? 'bt-perm-danger' : undefined}>
-          {presetName(option.value, catalog)}
-        </button>
-      ))}
-    </Segmented>
+    <div className='bt-perm'>
+      <Segmented label={t('Permissions')} value={current}>
+        {catalog.options.map(option => (
+          <button
+            key={option.value}
+            type='button'
+            data-permission={option.value}
+            aria-pressed={option.value === current}
+            title={presetHint(option.value, catalog) || option.description}
+            onClick={() => pick(option.value)}
+            className={presetDanger(option.value) ? 'bt-perm-danger' : undefined}>
+            {presetName(option.value, catalog)}
+          </button>
+        ))}
+      </Segmented>
+      {hint !== '' ? <p className='bt-perm-hint'>{hint}</p> : null}
+    </div>
   )
 }

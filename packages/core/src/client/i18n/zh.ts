@@ -254,7 +254,8 @@ export const ZH = {
   'Search connectors': '搜索连接器',
   'No connectors': '暂无连接器',
   Capabilities: '能力',
-  'No shared capabilities yet. Add connectors in Settings → Connectors, then turn them on here.': '还没有可共享的能力。先到「设置 → 连接器」添加，再回到这里打开。',
+  'No shared capabilities yet. Add connectors in Settings → Connectors, then turn them on here.':
+    '还没有可共享的能力。先到「设置 → 连接器」添加，再回到这里打开。',
   'Shared capabilities': '共享能力',
   'Add capability': '添加能力',
   'No capabilities saved': '还没有保存能力',
@@ -440,7 +441,8 @@ export const ZH = {
   'Provider ID, e.g. my-gateway': '服务商 ID，例如 my-gateway',
   'Name (optional)': '名称（可选）',
   Endpoint: '接口地址',
-  'The API base URL for this custom provider. Change it if the gateway moved.': '这个自定义服务商的 API 根地址。网关变更时在这里改。',
+  'The API base URL for this custom provider. Change it if the gateway moved.':
+    '这个自定义服务商的 API 根地址。网关变更时在这里改。',
   Protocol: '协议',
   'Asking…': '获取中…',
   'Fetch models': '获取模型列表',
@@ -519,7 +521,8 @@ export const ZH = {
   'Close details': '关闭详情',
   'Copied conversation': '已复制对话',
   'Share conversation': '分享对话',
-  'Copy is not available in this browser. Select the chat and copy manually.': '这个浏览器不能复制。请在对话里手动全选复制。',
+  'Copy is not available in this browser. Select the chat and copy manually.':
+    '这个浏览器不能复制。请在对话里手动全选复制。',
   'Could not copy the conversation. Check clipboard permission and try again.': '复制对话失败。检查剪贴板权限后再试。',
   'Apache-2.0 license': 'Apache-2.0 许可证',
   Releases: '发布页',
@@ -737,7 +740,8 @@ export const ZH = {
   Name: '名字',
   Instructions: '说明',
   'What this Bot is responsible for…': '这个 Bot 负责什么…',
-  'The Role above is its short persona. Instructions add lasting rules; leave empty to keep the built-in Main Bot guidance.': '上面的「角色」是短人设。说明里可以写长期规则；留空则沿用内置主 Bot 指引。',
+  'The Role above is its short persona. Instructions add lasting rules; leave empty to keep the built-in Main Bot guidance.':
+    '上面的「角色」是短人设。说明里可以写长期规则；留空则沿用内置主 Bot 指引。',
   'Optional. Role is already “{role}”. Add lasting rules here…': '可选。角色已是「{role}」。在这里补充长期规则…',
   'Pick the model this Bot runs on.': '选择这个 Bot 使用的模型。',
   'This model is not available now. Pick another one.': '这个模型现在不可用，请换一个。',
@@ -759,6 +763,11 @@ export const ZH = {
   'Read only': '仅可查看',
   Workspace: '工作区内修改',
   'Full access': '完全权限',
+  'Can read files and the web, but cannot change files or run commands.': '可以读文件和网页，但不能改文件或执行命令。',
+  'Can read and edit files in its working folder; asks before going further.':
+    '可以读写工作文件夹里的文件；越界前会先征求同意。',
+  'Can change files and run commands with fewer limits. Use only when you trust the task.':
+    '改文件、跑命令的限制更少。只在你信任这项任务时使用。',
   'Rate limited, retrying in {seconds}s': '请求受限，{seconds}s 后重试',
   'Request failed, retrying in {seconds}s': '请求失败，{seconds}s 后重试',
   'Model retry': '模型请求重试',
@@ -1357,7 +1366,8 @@ export const ZH = {
   'Reading your chats…': '正在读取聊天记录…',
   'No usage yet.': '还没有用量。',
   'Token usage shows up here after a model is called.': '调用模型之后，这里会显示 Token 用量。',
-  'Token counts appear after a chat uses a model. Older chats may take a moment to scan.': '对话调用模型后会在这里统计用量；较早的对话可能稍晚才扫到。',
+  'Token counts appear after a chat uses a model. Older chats may take a moment to scan.':
+    '对话调用模型后会在这里统计用量；较早的对话可能稍晚才扫到。',
   'Nothing in this range.': '这段时间没有用量。',
   'Who used it': '谁在用',
   'What for': '用途',
@@ -1446,26 +1456,35 @@ export const ZH = {
   '{name} could not answer: {reason}': '{name} 没能回答：{reason}',
   'Unknown error': '未知错误',
   'The API key was rejected': 'API 密钥无效',
-  'The API key was rejected. Open Settings → Models and update the key for this provider.': 'API 密钥无效。打开「设置 → 模型」，更新该服务商的密钥。',
+  'The API key was rejected. Open Settings → Models and update the key for this provider.':
+    'API 密钥无效。打开「设置 → 模型」，更新该服务商的密钥。',
   'The account is out of quota': '账户额度已用尽',
-  'The account is out of quota. Check the provider dashboard, or switch models in Settings → Models.': '额度用完了。到服务商控制台查看，或在「设置 → 模型」换一个模型。',
+  'The account is out of quota. Check the provider dashboard, or switch models in Settings → Models.':
+    '额度用完了。到服务商控制台查看，或在「设置 → 模型」换一个模型。',
   'Too many requests to the model': '模型请求太频繁',
   'Too many requests to the model. Wait a moment, then try again.': '请求太频繁了。稍等片刻再试。',
   'The conversation is too long for the model': '对话太长，超出模型上限',
-  'The conversation is too long for the model. Start a new chat, or pick a model with a larger context.': '对话对这个模型来说太长了。新开一个对话，或换一个上下文更大的模型。',
+  'The conversation is too long for the model. Start a new chat, or pick a model with a larger context.':
+    '对话对这个模型来说太长了。新开一个对话，或换一个上下文更大的模型。',
   'The model service refused the request': '模型服务拒绝了请求',
-  'The model service refused the request. Check the model id and provider settings in Settings → Models.': '模型服务拒绝了请求。到「设置 → 模型」检查模型 ID 和服务商配置。',
+  'The model service refused the request. Check the model id and provider settings in Settings → Models.':
+    '模型服务拒绝了请求。到「设置 → 模型」检查模型 ID 和服务商配置。',
   'The model service failed': '模型服务出错',
-  'The model service failed. Try again in a moment; if it keeps happening, check Settings → Models.': '模型服务出错了。稍后再试；若一直如此，到「设置 → 模型」检查配置。',
+  'The model service failed. Try again in a moment; if it keeps happening, check Settings → Models.':
+    '模型服务出错了。稍后再试；若一直如此，到「设置 → 模型」检查配置。',
   'The model took too long to answer': '模型响应超时',
-  'The model took too long to answer. Try again, or pick a faster model in Settings → Models.': '模型响应超时。再试一次，或在「设置 → 模型」换一个更快的模型。',
+  'The model took too long to answer. Try again, or pick a faster model in Settings → Models.':
+    '模型响应超时。再试一次，或在「设置 → 模型」换一个更快的模型。',
   'Could not reach the model service': '连不上模型服务',
-  'Could not reach the model service. Check the base URL, API key, and network in Settings → Models.': '连不上模型服务。请到「设置 → 模型」检查 Base URL、API 密钥和网络。',
+  'Could not reach the model service. Check the base URL, API key, and network in Settings → Models.':
+    '连不上模型服务。请到「设置 → 模型」检查 Base URL、API 密钥和网络。',
   'No model is set for this Bot': '这个 Bot 还没有可用模型',
-  'No model is set for this Bot. Pick one above the composer, or in Settings → Models.': '这个 Bot 还没有可用模型。在输入框上方选一个，或到「设置 → 模型」配置。',
+  'No model is set for this Bot. Pick one above the composer, or in Settings → Models.':
+    '这个 Bot 还没有可用模型。在输入框上方选一个，或到「设置 → 模型」配置。',
   'Model request failed': '模型请求失败',
   'Its group conversation could not open': '它的群聊会话打不开',
-  'Its group conversation could not open. Reload, or open the group again from the sidebar.': '群聊打不开。刷新页面，或从侧栏重新打开这个群。',
+  'Its group conversation could not open. Reload, or open the group again from the sidebar.':
+    '群聊打不开。刷新页面，或从侧栏重新打开这个群。',
   'Its group conversation could not open, so it starts a new one next time': '它的群聊会话打不开，下次会换一个新的',
   'Its group conversation could not open, so it starts a new one next time.': '群聊打不开，下次会新开一个。',
   // The composer's +

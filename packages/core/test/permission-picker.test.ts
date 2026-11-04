@@ -116,16 +116,34 @@ const mountPicker = (initial, repick = false) => {
     tree = render(PermissionPicker, props)
     return tree
   }
+  // PermissionPicker wraps Segmented in .bt-perm; the mock never invokes Segmented,
+  // so buttons sit on that vnode's children (same as when the root was Segmented).
+  const buttonsOf = () => {
+    const root = tree
+    const kids = (Array.isArray(root?.props?.children) ? root.props.children : [root?.props?.children]).filter(Boolean)
+    const fromRoot = kids.filter(node => node && node.type === 'button')
+    if (fromRoot.length) return fromRoot
+    const wrapper = kids.find(node =>
+      node && typeof node === 'object' && Array.isArray(node.props?.children)
+        ? node.props.children.some(c => c && c.type === 'button')
+        : node?.props?.children?.type === 'button',
+    )
+    const raw = wrapper?.props?.children
+    return (Array.isArray(raw) ? raw : raw ? [raw] : []).filter(node => node && node.type === 'button')
+  }
+  const buttonValue = button => button?.props?.['data-permission'] ?? button?.props?.title
   const picker = {
     requests,
     seen,
     rerender,
     press(value) {
-      tree.props.children.find(button => button.props.title === value).props.onClick()
+      const button = buttonsOf().find(entry => buttonValue(entry) === value)
+      assert.ok(button, `missing permission button ${value}`)
+      button.props.onClick()
       rerender()
     },
     pressed() {
-      return tree.props.children.find(button => button.props['aria-pressed'])?.props.title
+      return buttonValue(buttonsOf().find(button => button.props['aria-pressed']))
     },
     // Lets settled request continuations and their state updates land.
     async flush() {
@@ -138,6 +156,7 @@ const mountPicker = (initial, repick = false) => {
 }
 
 // #266: one save in flight; the latest pick wins, a failed request cannot clear it.
+
 test('a newer pick survives an older request failing', async () => {
   const picker = mountPicker({ catalog: { options: OPTIONS }, saved: 'read-only' })
   picker.press('workspace-write')
@@ -206,4 +225,12 @@ test('repick still lets the shown preset be picked again', async () => {
   assert.equal(picker.requests[0].value, 'read-only')
   picker.requests[0].resolve(true)
   await picker.flush()
+})
+
+test('shows a short hint for the selected permission', () => {
+  const picker = mountPicker({ catalog: { options: OPTIONS }, saved: 'read-only' })
+  const root = picker.rerender()
+  const kids = Array.isArray(root.props.children) ? root.props.children : [root.props.children]
+  const hint = kids.find(node => node?.props?.className === 'bt-perm-hint')
+  assert.match(String(hint?.props?.children ?? ''), /cannot change files|read files/i)
 })
