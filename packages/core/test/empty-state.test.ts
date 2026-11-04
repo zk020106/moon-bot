@@ -130,6 +130,7 @@ test('welcomeCopy guides a fresh Main Bot, peer Bot or group, and skips continue
     roomsById: { room },
   }
   assert.match(welcomeCopy(roster, 'main').title, /Moon/)
+  assert.match(welcomeCopy(roster, 'main').hint, /Connectors/)
   assert.match(welcomeCopy(roster, 'writer').hint, /Drafts docs/)
   assert.equal(welcomeCopy(roster, 'old-2'), null)
   assert.match(welcomeCopy(roster, 'room').title, /Design/)

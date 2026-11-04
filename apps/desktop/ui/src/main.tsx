@@ -4,14 +4,16 @@ import { createElement as h } from 'react'
 import { createRoot } from 'react-dom/client'
 import { installLocale } from '../../../../packages/core/src/client/i18n.ts'
 import { applyGlass, readGlass } from '../../../../packages/core/src/client/glass.ts'
+import { languageTag, readLanguage } from '../../../../packages/core/src/client/language-pref.ts'
 import { App } from './app.tsx'
 import { createLocale } from './locale.ts'
 import { installSheets } from './sheets.ts'
 import { applyTheme, followSystemAppearance } from './theme.ts'
 import './app.css'
 
-installLocale(createLocale(navigator.language))
-document.documentElement.lang = navigator.language
+const bootLanguage = readLanguage()
+installLocale(createLocale(languageTag(bootLanguage)))
+document.documentElement.lang = languageTag(bootLanguage)
 // macOS puts the window buttons at the band's left end, over the sidebar (app.css).
 const platform =
   (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform

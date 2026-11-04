@@ -88,9 +88,16 @@ test("a failed turn is one row of its own, with the reason and the model's words
   assert.equal(rendered.props.className, 'bt-turn-error')
   assert.equal(rendered.props.role, 'alert')
   // The sentence comes from the code; the model's own words ride under it.
-  assert.deepEqual(text(rendered), ['Model request failed', 'Could not reach the model service', 'Connection error.'])
+  assert.deepEqual(text(rendered), [
+    'Model request failed',
+    'Could not reach the model service. Check the base URL, API key, and network in Settings → Models.',
+    'Connection error.',
+  ])
   // A code with no words of its own shows the sentence alone.
-  assert.deepEqual(text(row.type({ code: 'AUTH' })), ['Model request failed', 'The API key was rejected'])
+  assert.deepEqual(text(row.type({ code: 'AUTH' })), [
+    'Model request failed',
+    'The API key was rejected. Open Settings → Models and update the key for this provider.',
+  ])
 })
 
 test('with the clock, a time separator sits above the first entry and after each pause of half an hour', () => {

@@ -5,7 +5,8 @@ import { ACCENT_INKS, INKS } from './inks.ts'
 import { allThemes, resolveThemeId } from './themes.ts'
 import { FolderMenu } from './folder-menu.tsx'
 import { Segmented } from './motion.tsx'
-import { t } from './i18n.ts'
+import { t, language } from './i18n.ts'
+import { readLanguage, setLanguage, type InterfaceLanguage } from './language-pref.ts'
 import type { RunWork, SettingsActions, SettingsPrefs, SettingsRoster } from './settings-types.ts'
 import { SetSection, SetRow, ThemePicker, capitalize } from './settings-chrome.tsx'
 import { GLASS_LABELS, GLASS_LEVELS, applyGlass, readGlass, setGlass, type GlassLevel } from './glass.ts'
@@ -17,6 +18,38 @@ interface GeneralPageProps {
 }
 // The transparency row saves on this device only, so it never goes through `run`: a
 // failed save here must not look like a team change that did not happen.
+
+function LanguageSection() {
+  const current: InterfaceLanguage = readLanguage(undefined, language())
+  return (
+    <SetSection key='language' title={t('Language')}>
+      <SetRow
+        label={t('Interface language')}
+        hint={t('Menus and labels on this device. Changing it reloads the window.')}>
+        <Segmented label={t('Interface language')} value={current}>
+          {(
+            [
+              ['en', 'English'],
+              ['zh', '中文'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type='button'
+              aria-pressed={current === id}
+              onClick={() => {
+                if (current === id) return
+                setLanguage(id)
+                window.location.reload()
+              }}>
+              {label}
+            </button>
+          ))}
+        </Segmented>
+      </SetRow>
+    </SetSection>
+  )
+}
 function GlassSection() {
   const [level, setLevel] = useState<GlassLevel>(() => readGlass())
   return (
@@ -101,6 +134,7 @@ export function GeneralPage({ roster, actions, run }: GeneralPageProps) {
         </div>
       </SetRow>
     </SetSection>,
+    <LanguageSection key='language' />,
     <GlassSection key='glass' />,
     LEAN.classicMode && actions.setSurface ? (
       <SetSection key='mode' title={t('Mode')}>

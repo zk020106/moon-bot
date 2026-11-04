@@ -66,19 +66,19 @@ export function clientFacts(): Record<string, string> {
 
 // Short words for the provider-neutral failure codes of the host's LLM layer.
 const FAILURES: Record<string, string> = {
-  AUTH: 'The API key was rejected',
-  QUOTA: 'The account is out of quota',
-  ACCOUNT_QUOTA: 'The account is out of quota',
-  RATE_LIMIT: 'Too many requests to the model',
-  CONTEXT_WINDOW_EXCEEDED: 'The conversation is too long for the model',
-  INVALID_REQUEST: 'The model service refused the request',
-  SERVER: 'The model service failed',
-  TIMEOUT: 'The model took too long to answer',
-  TRANSPORT: 'Could not reach the model service',
-  SESSION: 'Its group conversation could not open',
-  SESSION_RESET: 'Its group conversation could not open, so it starts a new one next time',
+  AUTH: 'The API key was rejected. Open Settings → Models and update the key for this provider.',
+  QUOTA: 'The account is out of quota. Check the provider dashboard, or switch models in Settings → Models.',
+  ACCOUNT_QUOTA: 'The account is out of quota. Check the provider dashboard, or switch models in Settings → Models.',
+  RATE_LIMIT: 'Too many requests to the model. Wait a moment, then try again.',
+  CONTEXT_WINDOW_EXCEEDED: 'The conversation is too long for the model. Start a new chat, or pick a model with a larger context.',
+  INVALID_REQUEST: 'The model service refused the request. Check the model id and provider settings in Settings → Models.',
+  SERVER: 'The model service failed. Try again in a moment; if it keeps happening, check Settings → Models.',
+  TIMEOUT: 'The model took too long to answer. Try again, or pick a faster model in Settings → Models.',
+  TRANSPORT: 'Could not reach the model service. Check the base URL, API key, and network in Settings → Models.',
+  SESSION: 'Its group conversation could not open. Reload, or open the group again from the sidebar.',
+  SESSION_RESET: 'Its group conversation could not open, so it starts a new one next time.',
   // The engine's own code: the Bot names no model, or its route is not set up.
-  'NO-MODEL': 'No model is set for this Bot',
+  'NO-MODEL': 'No model is set for this Bot. Pick one above the composer, or in Settings → Models.',
 }
 
 export function failureLabel(code: string, message?: string): string {
