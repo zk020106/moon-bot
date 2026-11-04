@@ -291,7 +291,7 @@ export function CommandPalette({ start, token, roster, actions, useSessions }: C
             <EmptyState
               icon={<SearchIcon />}
               title={t('No results for “{query}”', { query: query.trim() })}
-              hint={t('Try a Bot name or words from a message')}
+              hint={t('Try a Bot name, or words from a recent message in an open chat')}
               action={{
                 label: t('Clear search'),
                 onClick: () => {

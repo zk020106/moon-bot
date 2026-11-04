@@ -33,6 +33,7 @@ import type {
 } from '../../../../packages/core/src/client/cells-bubbles.tsx'
 import type { StoreHook } from '../../../../packages/core/src/client/cells-bubbles.tsx'
 import { openFeed } from './api.ts'
+import { appendOutline, outlineFromItems, type OutlineEntry } from './search-outline.ts'
 
 // Memory news and connector states change without a notice on the feed.
 const CATCH_UP_MS = 15_000
@@ -368,6 +369,15 @@ export function createTeam() {
         [sessionId]: [...(state[sessionId] ?? []), { placement: 'direct', time: Date.now() }],
       }))
     },
+    // Hydrate palette search from a loaded chat page (live feed alone only saw new lines).
+    noteChatOutline: (sessionId: string, items: readonly { kind?: string; text?: unknown; turn?: number }[]): void => {
+      const outline = outlineFromItems(items)
+      if (outline.length === 0) return
+      editRow(sessionId, row => ({
+        ...row,
+        projectionValues: { turnOutline: outline },
+      }))
+    },
   }
 
   // Running and the tool at work come with the team's state; the plugin read them from the
@@ -403,15 +413,19 @@ export function createTeam() {
       const sessionId = data.sessionId
       const item = data.item as Json
       const text = item.kind === 'bot' || item.kind === 'user' ? String(item.text ?? '') : ''
-      editRow(sessionId, row => ({
-        ...row,
-        updatedAt: Math.max(Number(row.updatedAt ?? 0), Number(item.time ?? 0)),
-        // The sidebar's preview line; turn -1 is never a hidden exchange turn.
-        projectionValues:
-          text !== ''
-            ? { turnOutline: [{ turn: -1, [item.kind === 'bot' ? 'response' : 'prompt']: text }] }
-            : row.projectionValues,
-      }))
+      editRow(sessionId, row => {
+        const prev = row.projectionValues as { turnOutline?: OutlineEntry[] } | undefined
+        const field = item.kind === 'bot' ? 'response' : 'prompt'
+        return {
+          ...row,
+          updatedAt: Math.max(Number(row.updatedAt ?? 0), Number(item.time ?? 0)),
+          // Keep recent lines for the command palette search (sidebar preview still uses the last).
+          projectionValues:
+            text !== ''
+              ? { turnOutline: appendOutline(prev?.turnOutline, field, text) }
+              : row.projectionValues,
+        }
+      })
       if (item.kind === 'bot' && shown.getSnapshot() !== sessionId) setStatus(sessionId, { completionUnread: true })
       if (item.kind === 'user')
         sent.set(state =>

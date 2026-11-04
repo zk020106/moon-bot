@@ -941,6 +941,7 @@ export const ZH = {
   Results: '结果',
   'No results': '没有结果',
   'Try a Bot name or words from a message': '试试 Bot 名字或消息里的词',
+  'Try a Bot name, or words from a recent message in an open chat': '试试 Bot 名字，或当前打开对话里最近消息的词',
 
   // Bot exchange
   'Bot exchange': 'Bot 间对话',
@@ -1347,6 +1348,7 @@ export const ZH = {
   'Reading your chats…': '正在读取聊天记录…',
   'No usage yet.': '还没有用量。',
   'Token usage shows up here after a model is called.': '调用模型之后，这里会显示 Token 用量。',
+  'Token counts appear after a chat uses a model. Older chats may take a moment to scan.': '对话调用模型后会在这里统计用量；较早的对话可能稍晚才扫到。',
   'Nothing in this range.': '这段时间没有用量。',
   'Who used it': '谁在用',
   'What for': '用途',

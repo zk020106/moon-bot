@@ -34,6 +34,14 @@ import { ComposerMenu, detectTrigger, type TriggerContext, type TriggerItem } fr
 // The chat follows its end while the user is this close to it.
 const FOLLOW_PX = 80
 
+function StopSquareIcon(): ReactElement {
+  return (
+    <svg width={14} height={14} viewBox='0 0 20 20' aria-hidden>
+      <rect x='5' y='5' width='10' height='10' rx='1.5' fill='currentColor' />
+    </svg>
+  )
+}
+
 const textOf = (item: ChatItem): string | undefined =>
   'text' in item && typeof item.text === 'string' ? item.text : undefined
 const sameItem = (a: ChatItem, b: ChatItem): boolean =>
@@ -249,7 +257,9 @@ interface ComposerProps {
   readonly sessionId: string
   readonly placeholder: string
   readonly disabled: boolean
+  readonly running: boolean
   readonly onSend: (text: string) => Promise<void>
+  readonly onStop: () => void
   readonly actions: Team['actions']
   readonly useUi: Team['hooks']['useUi']
   readonly useRoster: Team['hooks']['useRoster']
@@ -259,7 +269,9 @@ function Composer({
   sessionId,
   placeholder,
   disabled,
+  running,
   onSend,
+  onStop,
   actions,
   useUi,
   useRoster,
@@ -450,18 +462,31 @@ function Composer({
           </div>
         </div>
         <div className='mb-composer-trailing'>
-          <ComposerVoice sessionId={sessionId} inputActions={inputActions} actions={actions} useUi={useUi} />
-          <button
-            type='button'
-            className='mb-send'
-            disabled={disabled || text.trim() === ''}
-            aria-label={t('Send message')}
-            title={t('Send message')}
-            onClick={() => {
-              void submit()
-            }}>
-            <ArrowUpIcon />
-          </button>
+          {running ? null : (
+            <ComposerVoice sessionId={sessionId} inputActions={inputActions} actions={actions} useUi={useUi} />
+          )}
+          {running ? (
+            <button
+              type='button'
+              className='mb-send mb-stop'
+              aria-label={t('Stop')}
+              title={t('Stop')}
+              onClick={onStop}>
+              <StopSquareIcon />
+            </button>
+          ) : (
+            <button
+              type='button'
+              className='mb-send'
+              disabled={disabled || text.trim() === ''}
+              aria-label={t('Send message')}
+              title={t('Send message')}
+              onClick={() => {
+                void submit()
+              }}>
+              <ArrowUpIcon />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -481,6 +506,10 @@ export function Chat({ sessionId, team }: { readonly sessionId: string; readonly
   const follow = useRef(true)
   const question = (roster.questions as Record<string, { id: string } | undefined> | undefined)?.[sessionId]
   const running = hooks.useSessionStatus(map => map.get(sessionId)?.running === true)
+  useEffect(() => {
+    if (view.sessionId === null || view.items.length === 0) return
+    actions.noteChatOutline(view.sessionId, view.items)
+  }, [actions, view.sessionId, view.items])
   // A message still pending while a turn runs sits behind that turn in the Session's
   // queue; between turns the first one is the turn that is starting, and only the rest
   // wait for a later one.
@@ -575,6 +604,7 @@ export function Chat({ sessionId, team }: { readonly sessionId: string; readonly
         <Composer
           sessionId={sessionId}
           disabled={waiting}
+          running={running}
           placeholder={
             waiting
               ? t('Pick a model and {name} can start.', { name })
@@ -583,6 +613,9 @@ export function Chat({ sessionId, team }: { readonly sessionId: string; readonly
                 : t('Message')
           }
           onSend={text => send(text, actions, sessionId)}
+          onStop={() => {
+            void actions.stopTask(sessionId)
+          }}
           actions={actions}
           useUi={hooks.useUi}
           useRoster={hooks.useRoster}
