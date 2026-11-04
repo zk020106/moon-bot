@@ -9,19 +9,53 @@ import { failureOfMessage } from '../failure.ts'
 import type { EngineSessionConfig } from '../runtime.ts'
 import type { EngineServices, ResolvedModel, StoredMessage, ToolDefinition } from './services.ts'
 
+/**
+ * True when the endpoint is real OpenAI (or Azure OpenAI), which expects Chat Completions
+ * extras such as `store: false` and `max_completion_tokens`. Everything else — SenseNova,
+ * DeepSeek, OpenRouter-shaped gateways the user typed in — should speak the conservative
+ * OpenAI-compatible dialect OpenBot's custom providers use (`max_tokens`, no `store`).
+ */
+export const isOfficialOpenAiHost = (baseUrl: string): boolean => {
+  try {
+    const host = new URL(baseUrl).hostname.toLowerCase()
+    return host === 'api.openai.com' || host.endsWith('.openai.azure.com') || host.endsWith('.services.ai.azure.com')
+  } catch {
+    return false
+  }
+}
+
+/** Compat for user-typed OpenAI-compatible gateways; matches OpenBot's `@ai-sdk/openai-compatible` shape. */
+const CUSTOM_COMPLETIONS_COMPAT = {
+  supportsStore: false,
+  maxTokensField: 'max_tokens' as const,
+  supportsUsageInStreaming: false,
+  supportsDeveloperRole: false,
+  supportsReasoningEffort: false,
+}
+
 /** A pi Model for any endpoint the engine speaks; `input` is required: image checks read it. */
-export const piModelOf = (resolved: ResolvedModel): Model<'openai-completions' | 'anthropic-messages'> => ({
-  id: resolved.id,
-  name: resolved.id,
-  api: resolved.api ?? 'openai-completions',
-  provider: 'moon',
-  baseUrl: resolved.baseUrl,
-  input: (resolved.input && resolved.input.length > 0 ? resolved.input : ['text']) as ('text' | 'image')[],
-  reasoning: resolved.reasoning ?? resolved.effort !== undefined,
-  contextWindow: resolved.contextWindow ?? 128000,
-  maxTokens: resolved.maxTokens ?? 8192,
-  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-})
+export const piModelOf = (resolved: ResolvedModel): Model<'openai-completions' | 'anthropic-messages'> => {
+  const api = resolved.api ?? 'openai-completions'
+  const model: Model<'openai-completions' | 'anthropic-messages'> = {
+    id: resolved.id,
+    name: resolved.id,
+    api,
+    provider: 'moon',
+    baseUrl: resolved.baseUrl,
+    input: (resolved.input && resolved.input.length > 0 ? resolved.input : ['text']) as ('text' | 'image')[],
+    reasoning: resolved.reasoning ?? resolved.effort !== undefined,
+    contextWindow: resolved.contextWindow ?? 128000,
+    maxTokens: resolved.maxTokens ?? 8192,
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  }
+  // pi-ai auto-detect treats an unknown URL as stock OpenAI. Custom gateways then get
+  // `store` / `stream_options` / `max_completion_tokens`, which SenseNova-style hosts do
+  // not need and which OpenBot never sends on a custom provider.
+  if (api === 'openai-completions' && !isOfficialOpenAiHost(resolved.baseUrl)) {
+    return { ...model, api: 'openai-completions', compat: CUSTOM_COMPLETIONS_COMPAT }
+  }
+  return model
+}
 
 /** Normalizes any schema node recursively to standard JSON Schema (no boolean required, root is object). */
 function normalizeSchemaNode(node: unknown): Record<string, unknown> {
@@ -177,7 +211,11 @@ export async function buildAgent(options: AdapterOptions): Promise<Agent> {
     resolved.api === 'anthropic-messages'
       ? await import('@earendil-works/pi-ai/api/anthropic-messages')
       : await import('@earendil-works/pi-ai/api/openai-completions')
-  const streamFn = streamSimple as unknown as import('@earendil-works/pi-agent-core').StreamFn
+  // pi-ai disables the OpenAI SDK's own retries and defaults its wrapper to 0. Custom
+  // gateways drop streams more often than api.openai.com; one retry covers a TRANSPORT blip
+  // the way OpenBot/OpenCode's client path usually does.
+  const streamFn: import('@earendil-works/pi-agent-core').StreamFn = (model, context, options) =>
+    streamSimple(model as never, context, { ...options, maxRetries: options?.maxRetries ?? 2 }) as never
   const names = new Set(services.toolsFor(sessionId))
   const offered = (config?.tools === undefined ? [...names] : config.tools.filter(name => names.has(name)))
     .map(name => services.definitions.find(definition => definition.name === name))
