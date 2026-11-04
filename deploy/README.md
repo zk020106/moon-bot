@@ -1,5 +1,12 @@
 # Moon Bot web: run and deploy
 
+**Recommended:** one-command install from the public image
+`ghcr.io/zk020106/moon-bot` (anonymous pull — no `docker login` needed):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/zk020106/moon-bot/main/deploy/install.sh | sh
+```
+
 Local, from `apps/desktop/`:
 
     pnpm install && MOON_BOT_PASSWORD=choose-one pnpm --filter moon-bot run web   # http://127.0.0.1:8290
@@ -12,7 +19,7 @@ Docker, from the repository root (a one-off build, for trying it out):
 ## One command on a server
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/MoLi-MoChou/moon-bot/main/deploy/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/zk020106/moon-bot/main/deploy/install.sh | sh
 ```
 
 `deploy/install.sh` writes `.env` once (a generated password is printed once), creates `./data`
@@ -50,8 +57,9 @@ browser end-to-end check is green: a short-sha tag on every push to `main`, plus
 and `:latest`; a `v*` tag also publishes that version.
 
 1. Copy `deploy/` to the server (`docker-compose.yml`, `update.sh`, `rollback.sh`).
-2. `cp .env.example .env` and fill in `MOON_BOT_PASSWORD`, the provider keys and — if the
-   package is private — `docker login ghcr.io` once with a read-only token.
+2. `cp .env.example .env` and fill in `MOON_BOT_PASSWORD` and provider keys.
+   The image `ghcr.io/zk020106/moon-bot` is public (anonymous `docker pull`).
+   If a mirror or fork package is private, `docker login ghcr.io` once with a read-only token.
 3. `./update.sh` pulls the tag in `.env` (`latest` unless told otherwise), restarts the
    container and waits for `/healthz`; a tag that does not come up healthy rolls itself
    back to the one that was running. `./rollback.sh` does the same by hand, and

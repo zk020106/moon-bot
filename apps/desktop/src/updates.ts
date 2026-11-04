@@ -40,7 +40,7 @@ export const UPDATE_TEXT: Readonly<Record<'en' | 'zh', UpdateText>> = {
 }
 
 const CHECK_EVERY_MS = 4 * 60 * 60_000
-export const RELEASES_URL = 'https://api.github.com/repos/MoLi-MoChou/moon-bot/releases?per_page=20'
+export const RELEASES_URL = 'https://api.github.com/repos/zk020106/moon-bot/releases?per_page=20'
 
 interface ParsedVersion {
   readonly core: readonly [bigint, bigint, bigint]

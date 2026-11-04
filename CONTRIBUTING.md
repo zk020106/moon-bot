@@ -80,12 +80,12 @@ Keep one pull request to one issue. Split a large change into several pull reque
 
 You need:
 
-- Node.js `22.19` or later (or `24` and later).
+- Node.js `≥ 22.18` (or `24`+; matches root `engines`).
 - Git.
 - pnpm via Corepack, matching root `packageManager` (currently `pnpm@10.18.3`; `engines.pnpm` is `>=10.18.3`). Do not use npm or yarn for this repo.
 
 ```sh
-git clone https://github.com/MoLi-MoChou/moon-bot.git moon-bot
+git clone https://github.com/zk020106/moon-bot.git moon-bot
 cd moon-bot
 
 # Enable Corepack, then activate the pnpm version pinned in package.json.
